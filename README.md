@@ -1,6 +1,5 @@
 # 💫 About Me:
 
-I am a final-year Software Engineering student at Saigon Technology University (STU). I have hands-on expertise in system administration, containerization, and infrastructure deployment. My proven abilities include provisioning Linux servers, containerizing environments via Docker, managing databases, and hosting applications on VPS. I am currently seeking a System Engineer position to fully leverage my technical capabilities in optimizing infrastructure and implementing cloud-based solutions.
 
 ## 🌐 Socials:
 
