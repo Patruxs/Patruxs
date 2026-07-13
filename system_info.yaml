@@ -1,0 +1,65 @@
+# =============================================================================
+# SYSTEM.INFO — edit this file, then run:
+#
+#   python3 update_system_info.py
+#
+# That updates dark.svg and light.svg automatically.
+# =============================================================================
+
+# Terminal header (top line, purple)
+host: patruxs@devos
+fields:
+  - key: Subject
+    value: Patruxs · Laithuan Phat
+
+  - key: Role
+    value: Backend Engineer · Spring Boot
+
+  - key: Origin
+    value: Vietnam · Remote
+
+  - key: Education
+    value: Software Engineering
+
+  - key: Status
+    value: Building · Learning · Shipping
+
+  - key: ToolChain
+    value: VS Code, Git, Docker, Postman
+
+  - key: ""
+    value: ""
+
+  - key: Core.Lang
+    value: Java
+
+  - key: Core.Backend
+    value: Spring Boot, REST APIs, JWT
+
+  - key: Core.Database
+    value: MySQL, SQL Server
+
+  - key: Core.Infra
+    value: Docker, Linux, Git
+
+  - key: Core.Tools
+    value: Swagger, Postman
+
+  - key: ""
+    value: ""
+
+
+sections:
+  - title: Contact
+    fields:
+      - key: Grid.Mail
+        value: laithuanphat.work@gmail.com
+      - key: Grid.Portfolio
+        value: github.com/Patruxs
+      - key: Grid.LinkedIn
+        value: linkedin.com/in/patruxs
+      - key: Grid.Github
+        value: Patruxs
+
+  - title: Live Stats
+    note: See live GitHub stats badges below in README ↓
