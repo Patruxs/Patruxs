@@ -13,10 +13,10 @@ fields:
     value: ""
 
   - key: Subject
-    value: Patruxs · Laithuan Phat
+    value: Patrick
 
   - key: Role
-    value: Backend Engineer · Spring Boot
+    value: Backend Engineer · Fullstack Engineer
 
   - key: Origin
     value: Vietnam · Remote
@@ -27,31 +27,8 @@ fields:
   - key: Status
     value: Building · Learning · Shipping
 
-  - key: ToolChain
-    value: VS Code, Git, Docker, Postman
-
-  - key: ""
-    value: ""
-
-  # Auto-updated by today.py / GitHub Action from repo language stats
   - key: Core.Lang
     value: ""
-
-  - key: Core.Backend
-    value: Spring Boot, REST APIs, JWT
-
-  - key: Core.Database
-    value: MySQL, SQL Server
-
-  - key: Core.Infra
-    value: Docker, Linux, Git
-
-  - key: Core.Tools
-    value: Swagger, Postman
-
-  - key: ""
-    value: ""
-
 
 sections:
   - title: Contact
