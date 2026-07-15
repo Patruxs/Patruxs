@@ -311,42 +311,54 @@ def github_stats_rows(p: dict | None = None) -> list:
 
 def core_lang_rows(chunks: list[str] | None) -> list:
     """
-    Polished multi-line Core.Lang block — left-aligned language list:
+    Multi-line Core.Lang matching the terminal style:
 
-        . Core.Lang: TypeScript · Java · HTML · CSS · Python
-        .            JavaScript · Go · SCSS · Shell · PowerShell
-        .            Lua · Dockerfile
+        . Core.Lang: ..............TypeScript · Java · HTML · CSS · Python
+        .            JavaScript · Go · SCSS · Shell
+        .            PowerShell · HCL · Batchfile
 
-    Value column always starts at the same character index (after ". Core.Lang: ").
+    First line uses filler dots (like other kv rows). Continuations hang so
+    their text starts under the first language on line 1.
     """
     if not chunks:
         chunks = [" "]
 
     try:
-        from today import LANG_HANG_INDENT
+        from today import lang_hang_indent
     except Exception:
-        LANG_HANG_INDENT = 11  # len(". Core.Lang: ") - len(". ")
+        def lang_hang_indent(first: str) -> int:  # type: ignore
+            return max(2, 54 - len(first) - 2)
+
+    hang = lang_hang_indent(chunks[0])
+
+    # Dots only (no surrounding spaces): ". Core.Lang: ..............TypeScript · …"
+    first = chunks[0]
+    just_len = max(0, 40 - len(first))  # LANG_JUSTIFY_LEN
+    if just_len <= 0:
+        dots = ""
+    elif just_len == 1:
+        dots = "."
+    else:
+        dots = "." * just_len
 
     rows = []
-    # Primary: no filler dots — single space after colon (clean list header)
     rows.append(
         [
             ("cc", ". "),
             ("key", "Core"),
             ("cc", "."),
             ("key", "Lang"),
-            ("cc", ":"),
-            # live-rewritable spacer (today.py sets to " ")
-            ("cc", " ", {"id": "lang_data_dots"}),
-            ("value", chunks[0], {"id": "lang_data"}),
+            ("cc", ": "),
+            ("cc", dots, {"id": "lang_data_dots"}),
+            ("value", first, {"id": "lang_data"}),
         ]
     )
-    # Continuations: hang under the value column
+    # Continuations: hang under first-line language start
     for i, chunk in enumerate(chunks[1:], start=1):
         rows.append(
             [
                 ("cc", ". "),
-                ("cc", " " * LANG_HANG_INDENT),
+                ("cc", " " * hang),
                 ("value", chunk, {"id": f"lang_data_{i}"}),
             ]
         )
