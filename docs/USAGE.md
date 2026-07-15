@@ -1,168 +1,352 @@
 # Profile banner guide
 
-This repo powers the GitHub profile page for **Patruxs**: animated banners,
-live stats, contribution snake, and the profile README.
+This repository powers the **Patruxs** GitHub profile: dual-theme animated
+banners, live stats, contribution snake, and the profile `README.md`.
 
-## Layout
+Run every command from the **repo root** unless noted.
+
+---
+
+## Repository layout
 
 ```text
 Patruxs/
-├── README.md                 # Profile page (what GitHub shows)
-├── dark.svg / light.svg      # Theme banners
-├── snake.svg / snake-dark.svg
-├── system_info.yaml          # Edit static SYSTEM.INFO fields here
+├── README.md                      # What GitHub shows on your profile
+├── dark.svg / light.svg           # Theme banners (VISUAL.MAP + SYSTEM.INFO)
+├── snake.svg / snake-dark.svg     # Contribution snake
+├── system_info.yaml               # Static SYSTEM.INFO text (edit this)
 ├── requirements.txt
+├── .gitignore
+│
 ├── assets/
-│   └── portrait.txt          # ASCII art source for VISUAL.MAP
+│   └── portrait.txt               # ASCII portrait source for VISUAL.MAP
+│
 ├── scripts/
-│   ├── today.py              # Live: Uptime, Lang, GitHub Stats
-│   ├── update_system_info.py # Apply system_info.yaml → SVGs
-│   ├── ascii_to_svg.py       # portrait.txt → SVG tspans
-│   └── image_to_ascii.py     # photo → portrait.txt
+│   ├── today.py                   # Live refresh: Uptime, Lang, GitHub Stats
+│   ├── update_system_info.py      # Apply system_info.yaml → SVGs
+│   ├── ascii_to_svg.py            # portrait.txt → SVG <tspan> block
+│   ├── image_to_ascii.py          # Photo → ASCII portrait
+│   └── README.md
+│
 ├── docs/
-│   └── USAGE.md              # This file
+│   └── USAGE.md                   # This guide
+│
 └── .github/workflows/
-    ├── update-banners.yml    # Daily live field refresh
-    └── snake.yml             # Contribution snake
+    ├── update-banners.yml         # Daily live-field refresh
+    └── snake.yml                  # Contribution snake every 12h
 ```
+
+Profile assets stay at the **root** so `README.md` can use simple relative paths
+like `./dark.svg`.
+
+---
 
 ## Quick start
 
 ```bash
-# Install deps (once)
+# 1. Dependencies (once)
 pip install -r requirements.txt
 
-# Edit static text
-#   open system_info.yaml
+# 2. Edit static fields
+#    open system_info.yaml
 
-# Apply static fields + refresh Uptime / Lang
+# 3a. Apply YAML + light live fill (Uptime, Lang)
 python3 scripts/update_system_info.py
 
-# Or full live refresh (Uptime, all languages, GitHub Stats)
-export ACCESS_TOKEN=ghp_...   # optional but recommended
+# 3b. Or full live refresh (Uptime, all languages, GitHub Stats)
+export ACCESS_TOKEN=ghp_...          # optional, recommended for stats
 python3 scripts/today.py
 
-# Preview
-#   open dark.svg / light.svg in a browser
+# 4. Preview
+#    open dark.svg and light.svg in a browser
 
+# 5. Publish
 git add system_info.yaml dark.svg light.svg
 git commit -m "Update profile banner"
 git push
 ```
 
-## What updates automatically
+---
 
-| Field | Source | Workflow |
-|-------|--------|----------|
-| **Uptime** | Account age or `BIRTHDAY` var | `update-banners.yml` (daily) |
-| **Lang** | Languages across owned non-fork repos | same |
-| **GitHub Stats** | Repos, stars, commits, followers, LOC | same (needs token) |
-| **Snake** | Contribution graph | `snake.yml` (every 12h) |
+## What is live vs static
 
-Static rows (Subject, Role, Contact, …) come from `system_info.yaml` only.
+| Area | Source | Updates how |
+|------|--------|-------------|
+| **Uptime** | GitHub account `created_at`, or `BIRTHDAY` variable | Daily Action / `today.py` |
+| **Lang** | Languages across **owned, non-fork** repos (by code size) | Daily Action / `today.py` |
+| **GitHub Stats** | Repos, contributed repos, stars, commits, followers, LOC | Daily Action / `today.py` (needs token) |
+| **Snake** | Contribution graph | `snake.yml` every 12 hours |
+| **Subject, Role, Origin, …** | `system_info.yaml` | You edit YAML, then run `update_system_info.py` |
+| **Contact** | `system_info.yaml` | Same |
+| **ASCII portrait** | `assets/portrait.txt` | Manual / `image_to_ascii.py` |
+
+Leave live keys empty in YAML (`Uptime`, `Lang`). `GitHub Stats` is a section
+with `kind: github_stats` - values are filled by `today.py`, not hand-edited.
+
+### Lang display
+
+Languages are ranked by total bytes, packed into multiple monospaced lines,
+right-justified with filler dots:
+
+```text
+. Lang: ................TypeScript · Java · HTML · CSS
+. .............Python · JavaScript · Go · SCSS · Shell
+. ........................PowerShell · HCL · Batchfile
+. ......................Go Template · PHP · Ruby · Lua
+. ..........................................Dockerfile
+```
+
+---
 
 ## Edit static SYSTEM.INFO
 
-Open `system_info.yaml`:
+### 1. Open `system_info.yaml`
+
+Current shape:
 
 ```yaml
 host: patruxs@devos
 
 fields:
+  - key: Uptime
+    value: ""                    # live
+
   - key: Subject
-    value: Your Name
+    value: Patrick
+
   - key: Role
     value: Backend Engineer · Fullstack Engineer
+
+  - key: Origin
+    value: Vietnam · Remote
+
+  - key: Education
+    value: Software Engineering
+
+  - key: Status
+    value: Building · Learning · Shipping
+
   - key: Lang
-    value: ""          # filled live by today.py — leave empty
+    value: ""                    # live — all repo languages
 
 sections:
   - title: Contact
     fields:
       - key: Grid.Mail
-        value: you@email.com
+        value: laithuanphat.work@gmail.com
+      - key: Grid.Portfolio
+        value: github.com/Patruxs
+      - key: Grid.LinkedIn
+        value: linkedin.com/in/patruxs
+      - key: Grid.Github
+        value: Patruxs
+
   - title: GitHub Stats
-    kind: github_stats # live ids; values filled by today.py
+    kind: github_stats           # live block
 ```
 
-Then:
+### 2. Apply changes
 
 ```bash
 python3 scripts/update_system_info.py
 ```
 
+This rebuilds the SYSTEM.INFO panel in both theme SVGs and refreshes Uptime + Lang.
+
 ### Line types
 
 | YAML | Renders as |
 |------|------------|
-| `host:` | Purple header |
-| `key` + `value` | `. Key: ........ Value` |
-| empty key/value | Spacer |
-| `Grid.Mail` | Nested key styling |
-| `Lang` | Multi-line live languages |
-| `sections[].title` | `- Section` header |
-| `kind: github_stats` | Live stats block |
+| `host:` | Purple terminal header |
+| `key` + `value` | `. Key: ........ Value` (right-justified) |
+| empty `key` and `value` | Blank spacer |
+| `Grid.Mail` (nested key) | `. Grid.Mail: .... value` |
+| `Lang` | Multi-line live language list |
+| `sections[].title` | `- Contact` style header |
+| `kind: github_stats` | Live Repos / Commits / LOC rows |
+
+### Add a static row
+
+Under `fields:`:
+
+```yaml
+  - key: Focus
+    value: APIs · Distributed systems
+```
+
+Then run `python3 scripts/update_system_info.py`.
+
+---
+
+## Scripts reference
+
+Run from repo root:
+
+| Command | Purpose |
+|---------|---------|
+| `python3 scripts/today.py` | Full live update (Uptime, Lang, Stats) |
+| `python3 scripts/update_system_info.py` | YAML structure + Uptime/Lang |
+| `python3 scripts/ascii_to_svg.py` | Build tspans from `assets/portrait.txt` |
+| `python3 scripts/image_to_ascii.py PHOTO -o assets/portrait.txt` | Photo → ASCII |
+
+### `today.py` environment
+
+| Variable | Required | Meaning |
+|----------|----------|---------|
+| `USER_NAME` | No | GitHub login (default: `Patruxs`) |
+| `ACCESS_TOKEN` | Recommended | PAT for GraphQL stats + private repos |
+| `BIRTHDAY` | No | `YYYY-MM-DD` for Uptime; else account created_at |
+
+Example:
+
+```bash
+export USER_NAME=Patruxs
+export ACCESS_TOKEN=ghp_xxxxxxxx
+export BIRTHDAY=2002-07-05   # optional
+python3 scripts/today.py
+```
+
+Without `ACCESS_TOKEN`, Uptime and Lang still update (public APIs). GitHub Stats
+need a token for reliable results.
+
+---
 
 ## ASCII portrait (VISUAL.MAP)
 
-1. Put art in `assets/portrait.txt`, **or** generate from a photo:
+### From existing art
 
-```bash
-python3 scripts/image_to_ascii.py path/to/photo.jpg -o assets/portrait.txt
-```
-
-2. Optional: emit tspans for manual SVG editing:
+1. Edit `assets/portrait.txt` (monospace ASCII block).
+2. Optionally generate SVG tspans:
 
 ```bash
 python3 scripts/ascii_to_svg.py
-# writes assets/portrait_tspan.txt
+# → assets/portrait_tspan.txt
 ```
 
-3. Re-apply portrait into the banners (agent/script or paste tspans into SVG).
+3. Paste/update the portrait `<tspan>` block inside `dark.svg` and `light.svg`
+   (or have an agent do it). `update_system_info.py` does **not** rewrite VISUAL.MAP.
 
-`update_system_info.py` only rewrites the SYSTEM.INFO panel, not the portrait.
+### From a photo
 
-## GitHub Actions setup
+```bash
+python3 scripts/image_to_ascii.py path/to/photo.jpg -o assets/portrait.txt
 
-### Secrets / variables
+# Useful flags:
+#   --cols 92 --rows 53
+#   --gamma 0.90
+#   --no-crop / --no-dither / --no-subject-aware
+```
 
-| Name | Type | Purpose |
-|------|------|---------|
-| `ACCESS_TOKEN` | Secret | PAT for private repos + reliable GraphQL stats |
-| `BIRTHDAY` | Variable | Optional `YYYY-MM-DD` for Uptime (else account created_at) |
+Then open `assets/portrait.txt`, tweak if needed, and re-embed into the SVGs.
+
+---
+
+## Contribution snake
+
+Generated by `.github/workflows/snake.yml` (every 12 hours + manual).
+
+Files:
+
+- `snake.svg` - light theme  
+- `snake-dark.svg` - dark theme  
+
+Referenced from `README.md`:
+
+```markdown
+![Snake animation](./snake.svg#gh-light-mode-only)
+![Snake animation](./snake-dark.svg#gh-dark-mode-only)
+```
+
+---
+
+## GitHub Actions
+
+### Workflows
+
+| Workflow | File | Schedule | What it does |
+|----------|------|----------|--------------|
+| **Update profile banners** | `update-banners.yml` | Daily 00:00 UTC | Runs `scripts/today.py`, commits SVG changes |
+| **Generate snake animation** | `snake.yml` | Every 12 hours | Platane/snk → `snake.svg` / `snake-dark.svg` |
+
+Both support **workflow_dispatch** (manual run from the Actions tab).
+
+### Secrets and variables
 
 Repo → **Settings → Secrets and variables → Actions**
 
-Workflow permissions: **Read and write**.
+| Name | Kind | Purpose |
+|------|------|---------|
+| `ACCESS_TOKEN` | Secret | Fine-grained or classic PAT for stats / private languages |
+| `BIRTHDAY` | Variable | Optional Uptime start date (`YYYY-MM-DD`) |
 
-### Manual run
+Also set **Actions → General → Workflow permissions** to **Read and write**.
+
+Suggested PAT scopes (see comments in `scripts/today.py`):
+
+- Account: read followers / starring / watching  
+- Repositories: contents, metadata, commit statuses (as needed for LOC)
+
+### Manual banner refresh
 
 **Actions → Update profile banners → Run workflow**
 
+---
+
 ## Profile README
 
-`README.md` should stay at the repo root with:
+Keep `README.md` at the root. Minimal pattern:
 
 ```markdown
 ![Patruxs](./dark.svg#gh-dark-mode-only)
 ![Patruxs](./light.svg#gh-light-mode-only)
+
+## My stats:
+...
+
+## Commits
+![Snake animation](./snake.svg#gh-light-mode-only)
+![Snake animation](./snake-dark.svg#gh-dark-mode-only)
 ```
 
-Repo name must be `USERNAME/USERNAME` for the profile README to appear.
+The special repo name **`USERNAME/USERNAME`** is required for GitHub to show this
+as your profile README.
+
+---
+
+## Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+| Package | Used by |
+|---------|---------|
+| `python-dateutil`, `requests`, `lxml` | `today.py` |
+| `PyYAML` | `update_system_info.py` (optional fallback parser exists) |
+| `numpy`, `Pillow` | `image_to_ascii.py` |
+
+---
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
 | `ModuleNotFoundError` | `pip install -r requirements.txt` |
-| SVG unchanged | Hard-refresh browser |
-| GitHub shows old banner | Wait ~1 min or hard-refresh profile |
-| Stats stay `0` | Set `ACCESS_TOKEN` secret (PAT) |
-| Push races in CI | Workflow already rebases/retries |
+| Banner looks unchanged | Hard-refresh the browser / profile page |
+| GitHub still shows old SVG | Wait ~1 minute; hard-refresh; check Actions succeeded |
+| Stats stay `0` | Add `ACCESS_TOKEN` secret (PAT), re-run workflow |
+| Lang missing languages | Owned **non-fork** repos only; private needs PAT |
+| YAML parse / SVG XML error | Check indentation and quotes in `system_info.yaml` |
+| `python scripts/today.py` path errors | Run from **repo root**, not from `scripts/` |
 
-## One-liner
+---
+
+## One-liners
 
 ```text
-Edit system_info.yaml  →  python3 scripts/update_system_info.py  →  git push
-Live stats               →  python3 scripts/today.py             →  git push
+Static text   →  edit system_info.yaml  →  python3 scripts/update_system_info.py  →  git push
+Live fields   →  python3 scripts/today.py                                        →  git push
+Portrait      →  edit assets/portrait.txt  (or image_to_ascii.py)  →  re-embed SVGs →  git push
+Daily auto    →  GitHub Action update-banners.yml (Uptime + Lang + Stats)
+Snake auto    →  GitHub Action snake.yml
 ```
