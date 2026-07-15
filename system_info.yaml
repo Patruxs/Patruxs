@@ -9,6 +9,9 @@
 # Terminal header (top line, purple)
 host: patruxs@devos
 fields:
+  - key: Uptime
+    value: ""
+
   - key: Subject
     value: Patruxs · Laithuan Phat
 

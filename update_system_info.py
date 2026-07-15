@@ -131,8 +131,12 @@ def pad_dots(key: str, value: str, width: int = DOT_WIDTH) -> str:
     return "." * max(3, room)
 
 
-def render_segments(kind: str, **kwargs) -> list[tuple[str, str]]:
-    """Return list of (css_class, text) for one row."""
+# Segment: (css_class, text, optional html attrs dict)
+Seg = tuple  # (str, str) or (str, str, dict)
+
+
+def render_segments(kind: str, **kwargs) -> list:
+    """Return list of (css_class, text[, attrs]) for one row."""
     if kind == "head":
         host = kwargs["host"]
         dash = " -" + "—" * 42 + "-—-"
@@ -147,6 +151,8 @@ def render_segments(kind: str, **kwargs) -> list[tuple[str, str]]:
         return [("cc", ". "), ("value", kwargs["text"])]
     if kind == "kv":
         key, value = kwargs["key"], kwargs["value"]
+        dots_id = kwargs.get("dots_id")
+        value_id = kwargs.get("value_id")
         if "." in key and (key.startswith("Core") or key.startswith("Grid")):
             left, right = key.split(".", 1)
             dots = pad_dots(f"{left}.{right}", value)
@@ -159,6 +165,21 @@ def render_segments(kind: str, **kwargs) -> list[tuple[str, str]]:
                 ("value", value),
             ]
         dots = pad_dots(key, value)
+        # Match requested Uptime shape: key, bare ":", dots id, value id
+        if dots_id or value_id:
+            dots_seg: tuple = ("cc", f" {dots} ")
+            if dots_id:
+                dots_seg = ("cc", f" {dots} ", {"id": dots_id})
+            value_seg: tuple = ("value", value if value else " ")
+            if value_id:
+                value_seg = ("value", value if value else " ", {"id": value_id})
+            return [
+                ("cc", ". "),
+                ("key", key),
+                ("cc", ":"),
+                dots_seg,
+                value_seg,
+            ]
         return [
             ("cc", ". "),
             ("key", key),
@@ -168,8 +189,8 @@ def render_segments(kind: str, **kwargs) -> list[tuple[str, str]]:
     raise ValueError(f"unknown kind {kind}")
 
 
-def build_rows(cfg: dict) -> list[list[tuple[str, str]]]:
-    rows: list[list[tuple[str, str]]] = []
+def build_rows(cfg: dict) -> list:
+    rows: list = []
     rows.append(render_segments("head", host=cfg["host"]))
 
     for item in cfg.get("fields") or []:
@@ -180,6 +201,17 @@ def build_rows(cfg: dict) -> list[list[tuple[str, str]]]:
         value = str(value)
         if not key and not value:
             rows.append(render_segments("empty"))
+        elif key == "Uptime":
+            # Preserve age_data ids from the profile template
+            rows.append(
+                render_segments(
+                    "kv",
+                    key=key,
+                    value=value,
+                    dots_id="age_data_dots",
+                    value_id="age_data",
+                )
+            )
         else:
             rows.append(render_segments("kv", key=key, value=value))
 
@@ -218,19 +250,30 @@ def build_clippaths(n: int) -> str:
     return "".join(parts)
 
 
-def build_info_groups(rows: list[list[tuple[str, str]]], text_fill: str) -> str:
+def _attrs_str(attrs: dict | None) -> str:
+    if not attrs:
+        return ""
+    return "".join(f' {k}="{escape(str(v), quote=True)}"' for k, v in attrs.items())
+
+
+def build_info_groups(rows: list, text_fill: str) -> str:
     out = []
     for i, segs in enumerate(rows):
         y = INFO_START_Y + i * INFO_STEP
         tspans = []
         first = True
-        for cls, text in segs:
+        for seg in segs:
+            cls, text = seg[0], seg[1]
+            attrs = seg[2] if len(seg) > 2 else None
             t = escape(text)
+            extra = _attrs_str(attrs)
             if first:
-                tspans.append(f'<tspan x="{INFO_X}" y="{y}" class="{cls}">{t}</tspan>')
+                tspans.append(
+                    f'<tspan x="{INFO_X}" y="{y}" class="{cls}"{extra}>{t}</tspan>'
+                )
                 first = False
             else:
-                tspans.append(f'<tspan class="{cls}">{t}</tspan>')
+                tspans.append(f'<tspan class="{cls}"{extra}>{t}</tspan>')
         out.append(
             f'<g clip-path="url(#lc{i})">'
             f'<text x="{INFO_X}" y="0" fill="{text_fill}">{"".join(tspans)}</text>'
@@ -320,6 +363,18 @@ def main() -> int:
             continue
         print(f"Patching {target.name} ...")
         patch_svg(target, rows)
+
+    # Fill live Uptime (age_data) via today.py after structural rewrite
+    try:
+        from today import daily_readme, resolve_start_date, svg_overwrite
+
+        age = daily_readme(resolve_start_date())
+        for target in TARGETS:
+            if target.exists():
+                svg_overwrite(str(target), age)
+        print(f"  refreshed Uptime via today.py → {age}")
+    except Exception as exc:
+        print(f"Note: Uptime not refreshed ({exc}). Run: python3 today.py")
 
     print("Done. Open dark.svg / light.svg to preview.")
     return 0
