@@ -27,23 +27,24 @@ SVG_TARGETS = [
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
 # => AGE_JUSTIFY_LEN + 11 == 54 => 43
 AGE_JUSTIFY_LEN = 43
-# Core.Lang monospaced layout (LINE_WIDTH 54 in update_system_info.py)
+# Core.Lang monospaced layout (LINE_WIDTH 54)
 #
-# Desired look:
-#   . Core.Lang: ..............TypeScript · Java · HTML · CSS · Python
-#   .            JavaScript · Go · SCSS · Shell
-#   .            PowerShell · HCL · Batchfile
+# Every language line is right-justified with filler dots:
+#   . Core.Lang: ...........TypeScript · Java · HTML · CSS
+#   . ......................Python · JavaScript · Go
+#   . .....................SCSS · Shell · PowerShell
+#   . ...................HCL · Batchfile · Go Template
+#   . ...................PHP · Ruby · Lua · Dockerfile
 #
-# First line keeps filler dots (like other kv rows). Continuations hang so
-# their text starts under the first language on line 1.
 LINE_WIDTH = 54
-# justify_format budget for first-line value (dots = LANG_JUSTIFY_LEN - len(value))
-# Keep first-line values shorter so a visible run of dots remains.
-LANG_JUSTIFY_LEN = 40
-LANG_FIRST_BUDGET = 30  # pack fewer names on row 1 → more dots
-LANG_CONT_BUDGET = 40  # continuation value width
-LANG_MAX_ROWS = 6  # 1 primary + 5 continuation
-LANG_MAX_N = 50  # safety cap on ranked language names
+# Primary prefix ". Core.Lang: " = 13 → first-line value budget for packing
+LANG_FIRST_PREFIX = 13
+LANG_CONT_PREFIX = 2  # ". "
+LANG_FIRST_BUDGET = 30  # leave room for dots after the label
+LANG_CONT_BUDGET = 40  # leave some dots on continuation lines too
+LANG_JUSTIFY_LEN = 40  # legacy alias
+LANG_MAX_ROWS = 6
+LANG_MAX_N = 50
 LANG_SEP = " · "
 QUERY_COUNT = {
     'user_getter': 0,
@@ -467,76 +468,53 @@ def _pack_names_into_line(names, start, budget, reserve_overflow=False):
 
 def pack_lang_chunks(names):
     """
-    Pack ranked language names into 1..LANG_MAX_ROWS display lines.
+    Pack ranked language names into 1..LANG_MAX_ROWS right-justified lines.
 
-        . Core.Lang: ..............TypeScript · Java · HTML · CSS
-        .                       Python · JavaScript · Go · SCSS
-
-    First line uses a shorter budget so filler dots stay visible.
-    Continuation budget matches remaining width under the first language.
+        . Core.Lang: ...........TypeScript · Java · HTML · CSS
+        . ......................Python · JavaScript · Go
+        . .....................SCSS · Shell · PowerShell
     """
     if not names:
         return ['N/A']
 
-    # --- primary line (leave room for dots) ---
-    first, i = _pack_names_into_line(names, 0, LANG_FIRST_BUDGET, reserve_overflow=False)
-    if not first:
-        first = names[0][:LANG_FIRST_BUDGET]
-        i = 1
-    chunks = [first]
+    budgets = [LANG_FIRST_BUDGET] + [LANG_CONT_BUDGET] * (LANG_MAX_ROWS - 1)
+    chunks = []
+    i = 0
+    n = len(names)
 
-    # Right-justified first line: value starts at LINE_WIDTH - len(first).
-    # Continuations hang there, so remaining width is exactly len(first).
-    cont_budget = max(len(first), 12)
-
-    # --- continuation lines ---
-    while i < len(names) and len(chunks) < LANG_MAX_ROWS:
-        is_last = len(chunks) == LANG_MAX_ROWS - 1
+    for row_idx, budget in enumerate(budgets):
+        if i >= n:
+            break
+        is_last = row_idx == len(budgets) - 1
         text, i = _pack_names_into_line(
-            names, i, cont_budget, reserve_overflow=is_last and i < len(names)
+            names, i, budget, reserve_overflow=is_last and i < n
         )
         if not text:
-            # force progress on pathological long name
-            text = names[i][:cont_budget]
+            text = names[i][:budget]
             i += 1
         chunks.append(text)
         if is_last:
             break
 
-    # Overflow marker
-    if i < len(names):
-        extra = len(names) - i
+    if i < n:
+        extra = n - i
         suffix = f'{LANG_SEP}+{extra}'
+        last_budget = budgets[min(len(chunks) - 1, len(budgets) - 1)]
         last = chunks[-1]
-        if len(last) + len(suffix) <= cont_budget:
+        if len(last) + len(suffix) <= last_budget:
             chunks[-1] = last + suffix
         else:
             parts = last.split(LANG_SEP)
-            while parts and len(LANG_SEP.join(parts) + suffix) > cont_budget:
+            while parts and len(LANG_SEP.join(parts) + suffix) > last_budget:
                 parts.pop()
             chunks[-1] = (LANG_SEP.join(parts) + suffix) if parts else f'+{extra}'
 
     return chunks
 
 
-def lang_hang_indent(first_chunk: str) -> int:
-    """
-    Spaces after ". " so continuation values start under the first language.
-
-    First row layout (no spaces inside the dots run):
-      ". Core.Lang: " + dots + value   → length 54 when possible
-      value_start = 13 + len(dots) = LINE_WIDTH - len(value)
-    Continuation: ". " + hang + value → hang = value_start - 2
-    """
-    value_start = LINE_WIDTH - len(first_chunk)
-    hang = value_start - 2  # account for leading ". "
-    return max(2, hang)
-
-
-def lang_dots_for(first_chunk: str) -> str:
-    """Filler dots between ': ' and the first language (no surrounding spaces)."""
-    # ". Core.Lang: " = 13, value, dots fill to LINE_WIDTH
-    room = LINE_WIDTH - 13 - len(first_chunk)
+def lang_dots_for(value: str, prefix_len: int = LANG_FIRST_PREFIX) -> str:
+    """Filler dots so prefix + dots + value fills LINE_WIDTH (right-justified)."""
+    room = LINE_WIDTH - prefix_len - len(value)
     return "." * max(0, room)
 
 
@@ -563,15 +541,18 @@ def svg_overwrite(
     root = tree.getroot()
     # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
-    # Core.Lang: dotted first line + hang-aligned continuation lines
+    # Core.Lang: every line right-justified with filler dots
     if lang_data is not None:
         chunks = lang_data if isinstance(lang_data, list) else [lang_data]
         if not chunks:
             chunks = ['N/A']
         find_and_replace(root, 'lang_data', chunks[0])
-        find_and_replace(root, 'lang_data_dots', lang_dots_for(chunks[0]))
+        find_and_replace(root, 'lang_data_dots', lang_dots_for(chunks[0], LANG_FIRST_PREFIX))
         for i, chunk in enumerate(chunks[1:], start=1):
             find_and_replace(root, f'lang_data_{i}', chunk)
+            find_and_replace(
+                root, f'lang_data_{i}_dots', lang_dots_for(chunk, LANG_CONT_PREFIX)
+            )
     if commit_data is not None:
         justify_format(root, 'commit_data', commit_data, 22)
     if star_data is not None:

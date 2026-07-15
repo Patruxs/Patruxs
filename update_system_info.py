@@ -311,37 +311,29 @@ def github_stats_rows(p: dict | None = None) -> list:
 
 def core_lang_rows(chunks: list[str] | None) -> list:
     """
-    Multi-line Core.Lang matching the terminal style:
+    Multi-line Core.Lang — every line right-justified with filler dots:
 
-        . Core.Lang: ..............TypeScript · Java · HTML · CSS · Python
-        .            JavaScript · Go · SCSS · Shell
-        .            PowerShell · HCL · Batchfile
-
-    First line uses filler dots (like other kv rows). Continuations hang so
-    their text starts under the first language on line 1.
+        . Core.Lang: ...........TypeScript · Java · HTML · CSS
+        . ......................Python · JavaScript · Go
+        . .....................SCSS · Shell · PowerShell
+        . ...................PHP · Ruby · Lua · Dockerfile
     """
     if not chunks:
         chunks = [" "]
 
     try:
-        from today import lang_hang_indent
+        from today import LANG_CONT_PREFIX, LANG_FIRST_PREFIX, LINE_WIDTH, lang_dots_for
     except Exception:
-        def lang_hang_indent(first: str) -> int:  # type: ignore
-            return max(2, 54 - len(first) - 2)
+        LINE_WIDTH = 54
+        LANG_FIRST_PREFIX = 13
+        LANG_CONT_PREFIX = 2
 
-    hang = lang_hang_indent(chunks[0])
-
-    # Dots only (no surrounding spaces): ". Core.Lang: ..............TypeScript · …"
-    first = chunks[0]
-    just_len = max(0, 40 - len(first))  # LANG_JUSTIFY_LEN
-    if just_len <= 0:
-        dots = ""
-    elif just_len == 1:
-        dots = "."
-    else:
-        dots = "." * just_len
+        def lang_dots_for(value: str, prefix_len: int = 13) -> str:
+            return "." * max(0, LINE_WIDTH - prefix_len - len(value))
 
     rows = []
+    # Primary
+    first = chunks[0]
     rows.append(
         [
             ("cc", ". "),
@@ -349,16 +341,20 @@ def core_lang_rows(chunks: list[str] | None) -> list:
             ("cc", "."),
             ("key", "Lang"),
             ("cc", ": "),
-            ("cc", dots, {"id": "lang_data_dots"}),
+            ("cc", lang_dots_for(first, LANG_FIRST_PREFIX), {"id": "lang_data_dots"}),
             ("value", first, {"id": "lang_data"}),
         ]
     )
-    # Continuations: hang under first-line language start
+    # Continuations — same right-justify style
     for i, chunk in enumerate(chunks[1:], start=1):
         rows.append(
             [
                 ("cc", ". "),
-                ("cc", " " * hang),
+                (
+                    "cc",
+                    lang_dots_for(chunk, LANG_CONT_PREFIX),
+                    {"id": f"lang_data_{i}_dots"},
+                ),
                 ("value", chunk, {"id": f"lang_data_{i}"}),
             ]
         )
