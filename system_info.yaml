@@ -33,8 +33,9 @@ fields:
   - key: ""
     value: ""
 
+  # Auto-updated by today.py / GitHub Action from repo language stats
   - key: Core.Lang
-    value: Java
+    value: ""
 
   - key: Core.Backend
     value: Spring Boot, REST APIs, JWT

@@ -27,7 +27,23 @@ SVG_TARGETS = [
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
 # => AGE_JUSTIFY_LEN + 11 == 54 => 43
 AGE_JUSTIFY_LEN = 43
-QUERY_COUNT = {'user_getter': 0, 'follower_getter': 0, 'graph_repos_stars': 0, 'recursive_loc': 0, 'graph_commits': 0, 'loc_query': 0}
+# Core.Lang row: ". Core.Lang:" (12) + dots_tspan + value == 54
+# dots_tspan is ": {dots} " when static, or rewritten as " " + dots + " " by justify_format
+# With justify_format style " "+dots+" ": 12-1 + 2 + just_len + len(value) ...
+# Practical budget matching LINE_WIDTH 54 for "Core.Lang" label (9 chars):
+# fixed without dots = 2+9+2+1 = 14 → LANG_JUSTIFY_LEN = 40
+LANG_JUSTIFY_LEN = 40
+# Max top languages to show in Core.Lang (by total bytes across repos)
+LANG_TOP_N = 3
+QUERY_COUNT = {
+    'user_getter': 0,
+    'follower_getter': 0,
+    'graph_repos_stars': 0,
+    'recursive_loc': 0,
+    'graph_commits': 0,
+    'loc_query': 0,
+    'languages_getter': 0,
+}
 
 
 def daily_readme(birthday):
@@ -332,7 +348,110 @@ def stars_counter(data):
     return total_stars
 
 
-def svg_overwrite(filename, age_data, commit_data=None, star_data=None, repo_data=None, contrib_data=None, follower_data=None, loc_data=None):
+def languages_getter(username, top_n=LANG_TOP_N, max_value_len=36):
+    """
+    Aggregate languages across the user's non-fork repositories (by bytes of code).
+    Returns a compact string like "Java, TypeScript, Python".
+    Uses GraphQL when ACCESS_TOKEN is set (fewer requests), else public REST.
+    """
+    query_count('languages_getter')
+    totals = {}
+
+    if ACCESS_TOKEN:
+        cursor = None
+        while True:
+            query = '''
+            query ($login: String!, $cursor: String) {
+              user(login: $login) {
+                repositories(
+                  first: 50
+                  after: $cursor
+                  ownerAffiliations: [OWNER]
+                  isFork: false
+                  orderBy: {field: UPDATED_AT, direction: DESC}
+                ) {
+                  pageInfo { hasNextPage endCursor }
+                  nodes {
+                    languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+                      edges { size node { name } }
+                    }
+                  }
+                }
+              }
+            }'''
+            variables = {'login': username, 'cursor': cursor}
+            request = simple_request(languages_getter.__name__, query, variables)
+            data = request.json()['data']['user']['repositories']
+            for node in data['nodes']:
+                langs = (node.get('languages') or {}).get('edges') or []
+                for edge in langs:
+                    name = edge['node']['name']
+                    totals[name] = totals.get(name, 0) + int(edge['size'])
+            if not data['pageInfo']['hasNextPage']:
+                break
+            cursor = data['pageInfo']['endCursor']
+    else:
+        # Public REST fallback (no token)
+        page = 1
+        headers = HEADERS or {'Accept': 'application/vnd.github+json'}
+        while True:
+            resp = requests.get(
+                f'https://api.github.com/users/{username}/repos',
+                params={'per_page': 100, 'page': page, 'type': 'owner', 'sort': 'updated'},
+                headers=headers,
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                raise Exception(
+                    'languages_getter REST list failed',
+                    resp.status_code,
+                    resp.text[:200],
+                )
+            repos = resp.json()
+            if not repos:
+                break
+            for repo in repos:
+                if repo.get('fork'):
+                    continue
+                lr = requests.get(
+                    repo['languages_url'],
+                    headers=headers,
+                    timeout=30,
+                )
+                if lr.status_code != 200:
+                    continue
+                for name, size in lr.json().items():
+                    totals[name] = totals.get(name, 0) + int(size)
+            if len(repos) < 100:
+                break
+            page += 1
+
+    if not totals:
+        return 'N/A'
+
+    ranked = sorted(totals.items(), key=lambda kv: kv[1], reverse=True)
+    chosen = []
+    for name, _size in ranked:
+        trial = ', '.join(chosen + [name])
+        if chosen and len(trial) > max_value_len:
+            break
+        chosen.append(name)
+        if len(chosen) >= top_n:
+            break
+    return ', '.join(chosen) if chosen else ranked[0][0]
+
+
+def svg_overwrite(
+    filename,
+    age_data,
+    commit_data=None,
+    star_data=None,
+    repo_data=None,
+    contrib_data=None,
+    follower_data=None,
+    loc_data=None,
+    lang_data=None,
+):
     """
     Parse SVG files and update elements with uptime/age and optional GitHub stats.
     Only IDs that exist in the SVG are written (missing ones are skipped).
@@ -341,6 +460,9 @@ def svg_overwrite(filename, age_data, commit_data=None, star_data=None, repo_dat
     root = tree.getroot()
     # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
+    # Core.Lang (ids: lang_data, lang_data_dots)
+    if lang_data is not None:
+        justify_format(root, 'lang_data', lang_data, LANG_JUSTIFY_LEN)
     if commit_data is not None:
         justify_format(root, 'commit_data', commit_data, 22)
     if star_data is not None:
@@ -514,6 +636,11 @@ if __name__ == '__main__':
     formatter('uptime calculation', age_time)
     print(f"   uptime text:           {age_data}")
 
+    # Always refresh Core.Lang from repository language stats
+    lang_data, lang_time = perf_counter(languages_getter, USER_NAME)
+    formatter('languages', lang_time)
+    print(f"   core.lang:             {lang_data}")
+
     commit_data = star_data = repo_data = contrib_data = follower_data = None
     loc_slice = None
     user_time = loc_time = commit_time = star_time = repo_time = contrib_time = follower_time = 0.0
@@ -557,7 +684,7 @@ if __name__ == '__main__':
             total_loc[index] = '{:,}'.format(total_loc[index])
         loc_slice = total_loc[:-1]
     else:
-        print('   ACCESS_TOKEN not set — updating Uptime only (skipping GitHub stats)')
+        print('   ACCESS_TOKEN not set — skipping stars/LOC/etc. (Core.Lang still updated)')
 
     for svg_path in SVG_TARGETS:
         if not os.path.isfile(svg_path):
@@ -572,12 +699,14 @@ if __name__ == '__main__':
             contrib_data,
             follower_data,
             loc_slice,
+            lang_data,
         )
         print(f'   updated {os.path.basename(svg_path)}')
 
     total = (
         user_time
         + age_time
+        + lang_time
         + loc_time
         + commit_time
         + star_time

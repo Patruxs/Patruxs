@@ -177,14 +177,31 @@ def render_segments(kind: str, **kwargs) -> list:
         value_id = kwargs.get("value_id")
         if "." in key and (key.startswith("Core") or key.startswith("Grid")):
             left, right = key.split(".", 1)
-            dots = pad_dots(f"{left}.{right}", value)
+            value_text = value if value else " "
+            dots = pad_dots(f"{left}.{right}", value_text)
+            dots_id = kwargs.get("dots_id")
+            value_id = kwargs.get("value_id")
+            value_seg: tuple = ("value", value_text)
+            if value_id:
+                value_seg = ("value", value_text, {"id": value_id})
+            if dots_id:
+                # Split ":" from live dots so today.py can rewrite dots without losing colon
+                return [
+                    ("cc", ". "),
+                    ("key", left),
+                    ("cc", "."),
+                    ("key", right),
+                    ("cc", ":"),
+                    ("cc", f" {dots} ", {"id": dots_id}),
+                    value_seg,
+                ]
             return [
                 ("cc", ". "),
                 ("key", left),
                 ("cc", "."),
                 ("key", right),
                 ("cc", f": {dots} "),
-                ("value", value),
+                value_seg,
             ]
         dots = pad_dots(key, value)
         # Uptime (and similar live fields): same alignment as other kv rows
@@ -313,6 +330,17 @@ def build_rows(cfg: dict) -> list:
                     value=value,
                     dots_id="age_data_dots",
                     value_id="age_data",
+                )
+            )
+        elif key == "Core.Lang":
+            # Live languages from today.py (ids: lang_data, lang_data_dots)
+            rows.append(
+                render_segments(
+                    "kv",
+                    key=key,
+                    value=value or " ",
+                    dots_id="lang_data_dots",
+                    value_id="lang_data",
                 )
             )
         else:
@@ -578,17 +606,31 @@ def main() -> int:
         print(f"Patching {target.name} ...")
         patch_svg(target, rows)
 
-    # Fill live Uptime (age_data) via today.py after structural rewrite
+    # Fill live Uptime + Core.Lang via today.py after structural rewrite
     try:
-        from today import daily_readme, resolve_start_date, svg_overwrite
+        from today import (
+            USER_NAME,
+            daily_readme,
+            languages_getter,
+            resolve_start_date,
+            svg_overwrite,
+        )
 
         age = daily_readme(resolve_start_date())
+        try:
+            langs = languages_getter(USER_NAME)
+        except Exception as lang_exc:
+            print(f"  Note: languages not refreshed ({lang_exc})")
+            langs = None
         for target in TARGETS:
             if target.exists():
-                svg_overwrite(str(target), age)
-        print(f"  refreshed Uptime via today.py → {age}")
+                svg_overwrite(str(target), age, lang_data=langs)
+        msg = f"  refreshed Uptime via today.py → {age}"
+        if langs is not None:
+            msg += f" | Core.Lang → {langs}"
+        print(msg)
     except Exception as exc:
-        print(f"Note: Uptime not refreshed ({exc}). Run: python3 today.py")
+        print(f"Note: live fields not refreshed ({exc}). Run: python3 today.py")
 
     print("Done. Open dark.svg / light.svg to preview.")
     return 0

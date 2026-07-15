@@ -1,7 +1,7 @@
-name: Update profile uptime
+name: Update profile banners
 
 on:
-  # Refresh Uptime once a day (midnight UTC)
+  # Refresh Uptime, Core.Lang, and GitHub Stats daily (midnight UTC)
   schedule:
     - cron: "0 0 * * *"
 
@@ -14,12 +14,14 @@ on:
       - main
     paths:
       - "today.py"
+      - "update_system_info.py"
+      - "system_info.yaml"
       - ".github/workflows/update-uptime.yml"
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: write
 
@@ -41,8 +43,8 @@ jobs:
         env:
           # Defaults to the repo owner (Patruxs)
           USER_NAME: ${{ github.repository_owner }}
-          # Prefer a PAT in secrets.ACCESS_TOKEN (broader GraphQL access).
-          # Falls back to the job token so GitHub Stats can still update.
+          # Prefer a PAT in secrets.ACCESS_TOKEN (private repos + broader GraphQL).
+          # Falls back to the job token for public language/stats updates.
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN != '' && secrets.ACCESS_TOKEN || github.token }}
           # Optional: set repo variable BIRTHDAY as YYYY-MM-DD to pin a start date.
           # Without it, Uptime uses the GitHub account created_at date.
@@ -54,7 +56,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Uptime always touches these; cache/ only appears with ACCESS_TOKEN stats
+          # Uptime + Core.Lang + GitHub Stats land in the SVGs
           git add dark.svg light.svg
           if [ -d cache ]; then
             git add cache || true
@@ -65,5 +67,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: update profile uptime [skip ci]"
+          git commit -m "chore: update profile banners (uptime, languages, stats) [skip ci]"
           git push
