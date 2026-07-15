@@ -14,3 +14,8 @@
 
 ![Snake animation](./snake.svg#gh-light-mode-only)
 ![Snake animation](./snake-dark.svg#gh-dark-mode-only)
+
+<!--
+  Banner source + automation: see docs/USAGE.md
+  Live fields (Uptime, Lang, GitHub Stats) update daily via GitHub Actions.
+-->

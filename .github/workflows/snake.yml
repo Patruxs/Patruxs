@@ -19,6 +19,9 @@ on:
       - "light.svg"
       - "README.md"
       - "cache/**"
+      - "docs/**"
+      - "scripts/**"
+      - "assets/**"
 
 jobs:
   generate:

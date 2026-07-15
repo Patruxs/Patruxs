@@ -1,10 +1,12 @@
 import datetime
-from dateutil import relativedelta
-import requests
-import os
-from lxml import etree
-import time
 import hashlib
+import os
+import sys
+import time
+
+import requests
+from dateutil import relativedelta
+from lxml import etree
 
 # Fine-grained personal access token with All Repositories access:
 # Account permissions: read:Followers, read:Starring, read:Watching
@@ -15,7 +17,10 @@ import hashlib
 # Optional:
 #   USER_NAME   - GitHub login (default: Patruxs)
 #   BIRTHDAY    - YYYY-MM-DD for Uptime (default: GitHub account created_at, else 2002-07-05)
-ROOT = os.path.dirname(os.path.abspath(__file__))
+# Repo root is one level above scripts/
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(SCRIPT_DIR)
+CACHE_DIR = os.path.join(ROOT, 'cache')
 USER_NAME = os.environ.get('USER_NAME', 'Patruxs')
 ACCESS_TOKEN = os.environ.get('ACCESS_TOKEN', '')
 HEADERS = {'authorization': 'token ' + ACCESS_TOKEN} if ACCESS_TOKEN else {}
@@ -261,8 +266,8 @@ def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
     If it has, run recursive_loc on that repository to update the LOC count
     """
     cached = True # Assume all repositories are cached
-    os.makedirs('cache', exist_ok=True)
-    filename = 'cache/'+hashlib.sha256(USER_NAME.encode('utf-8')).hexdigest()+'.txt' # Create a unique filename for each user
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    filename = os.path.join(CACHE_DIR, hashlib.sha256(USER_NAME.encode('utf-8')).hexdigest() + '.txt') # Create a unique filename for each user
     try:
         with open(filename, 'r') as f:
             data = f.readlines()
@@ -322,7 +327,7 @@ def add_archive():
     Several repositories I have contributed to have since been deleted.
     This function adds them using their last known data
     """
-    with open('cache/repository_archive.txt', 'r') as f:
+    with open(os.path.join(CACHE_DIR, 'repository_archive.txt'), 'r') as f:
         data = f.readlines()
     old_data = data
     data = data[7:len(data)-3] # remove the comment block    
@@ -341,7 +346,7 @@ def force_close_file(data, cache_comment):
     Forces the file to close, preserving whatever data was written to it
     This is needed because if this function is called, the program would've crashed before the file is properly saved and closed
     """
-    filename = 'cache/'+hashlib.sha256(USER_NAME.encode('utf-8')).hexdigest()+'.txt'
+    filename = os.path.join(CACHE_DIR, hashlib.sha256(USER_NAME.encode('utf-8')).hexdigest() + '.txt')
     with open(filename, 'w') as f:
         f.writelines(cache_comment)
         f.writelines(data)
@@ -608,7 +613,7 @@ def commit_counter(comment_size):
     Counts up my total commits, using the cache file created by cache_builder.
     """
     total_commits = 0
-    filename = 'cache/'+hashlib.sha256(USER_NAME.encode('utf-8')).hexdigest()+'.txt' # Use the same filename as cache_builder
+    filename = os.path.join(CACHE_DIR, hashlib.sha256(USER_NAME.encode('utf-8')).hexdigest() + '.txt') # Use the same filename as cache_builder
     with open(filename, 'r') as f:
         data = f.readlines()
     cache_comment = data[:comment_size] # save the comment block
@@ -776,10 +781,12 @@ if __name__ == '__main__':
     else:
         print('   ACCESS_TOKEN not set — skipping stars/LOC/etc. (Lang still updated)')
 
-    # Rebuild SYSTEM.INFO structure so multi-line Core.Lang rows exist
+    # Rebuild SYSTEM.INFO structure so multi-line Lang rows exist
     try:
         from pathlib import Path as _Path
 
+        if SCRIPT_DIR not in sys.path:
+            sys.path.insert(0, SCRIPT_DIR)
         from update_system_info import CONFIG, build_rows, load_config, patch_svg
 
         cfg = load_config(CONFIG)

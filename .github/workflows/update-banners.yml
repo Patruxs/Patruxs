@@ -1,22 +1,20 @@
 name: Update profile banners
 
 on:
-  # Daily refresh: Uptime, Core.Lang (all languages), GitHub Stats
+  # Daily: Uptime, Lang (all languages), GitHub Stats
   schedule:
     - cron: "0 0 * * *"
 
-  # Allow manual runs from the Actions tab
   workflow_dispatch:
 
-  # Re-run when scripts or this workflow change
   push:
     branches:
       - main
     paths:
-      - "today.py"
-      - "update_system_info.py"
+      - "scripts/today.py"
+      - "scripts/update_system_info.py"
       - "system_info.yaml"
-      - ".github/workflows/update-uptime.yml"
+      - ".github/workflows/update-banners.yml"
 
 concurrency:
   group: update-profile-banners
@@ -43,17 +41,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install python-dateutil requests lxml
+          pip install -r requirements.txt
 
       - name: Run today.py
         env:
           USER_NAME: ${{ github.repository_owner }}
           # PAT recommended for private repos + full LOC/stats.
-          # Falls back to job token for public language/stats updates.
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
           # Optional repo variable: YYYY-MM-DD
           BIRTHDAY: ${{ vars.BIRTHDAY }}
-        run: python today.py
+        run: python scripts/today.py
 
       - name: Commit and push banner updates
         run: |
@@ -64,7 +61,6 @@ jobs:
 
           git add dark.svg light.svg
 
-          # cache/ is gitignored; force-add so LOC stats stay warm between runs
           if [ -d cache ]; then
             git add -f cache || true
           fi
@@ -76,7 +72,6 @@ jobs:
 
           git commit -m "chore: update profile banners (uptime, languages, stats) [skip ci]"
 
-          # Survive concurrent pushes (e.g. snake animation)
           for i in 1 2 3; do
             if git pull --rebase origin main && git push; then
               exit 0

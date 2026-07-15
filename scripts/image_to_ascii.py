@@ -113,7 +113,7 @@ def _gamma(arr: np.ndarray, g: float) -> np.ndarray:
     return np.power(np.clip(arr, 0.0, 1.0), max(g, 1e-6))
 
 
-def _unsharp(arr: np.ndarray, amount: float = 0.55) -> np.ndarray
+def _unsharp(arr: np.ndarray, amount: float = 0.55) -> np.ndarray:
     if amount <= 0:
         return arr
     p = np.pad(arr, 1, mode="edge")

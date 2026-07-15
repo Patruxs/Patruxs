@@ -2,9 +2,9 @@
 """
 Update SYSTEM.INFO in dark.svg and light.svg from system_info.yaml.
 
-Usage:
+Usage (from repo root):
   1. Edit system_info.yaml
-  2. Run:  python3 update_system_info.py
+  2. Run:  python3 scripts/update_system_info.py
   3. Open dark.svg / light.svg to preview
 
 Requires: PyYAML  (pip install pyyaml)  — falls back to a tiny YAML subset parser.
@@ -17,7 +17,12 @@ from html import escape
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-ROOT = Path(__file__).resolve().parent
+# Repo root is one level above scripts/
+SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT = SCRIPT_DIR.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
 CONFIG = ROOT / "system_info.yaml"
 TARGETS = [ROOT / "dark.svg", ROOT / "light.svg"]
 
