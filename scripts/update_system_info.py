@@ -316,52 +316,31 @@ def github_stats_rows(p: dict | None = None) -> list:
 
 def lang_rows(chunks: list[str] | None) -> list:
     """
-    Multi-line Lang — every line right-justified with filler dots:
+    Single-line Lang, right-justified with filler dots:
 
-        . Lang: ................TypeScript · Java · HTML · CSS
-        . ......................Python · JavaScript · Go
-        . .....................SCSS · Shell · PowerShell
-        . ...................PHP · Ruby · Lua · Dockerfile
+        . Lang: .......... TypeScript · Java · HTML · CSS · Python +12
     """
     if not chunks:
         chunks = [" "]
 
     try:
-        from today import LANG_CONT_PREFIX, LANG_FIRST_PREFIX, LINE_WIDTH, lang_dots_for
+        from today import LANG_FIRST_PREFIX, lang_dots_for
     except Exception:
-        LINE_WIDTH = 54
         LANG_FIRST_PREFIX = 8  # len(". Lang: ")
-        LANG_CONT_PREFIX = 2
 
         def lang_dots_for(value: str, prefix_len: int = 8) -> str:
-            return "." * max(0, LINE_WIDTH - prefix_len - len(value))
+            return "." * max(0, 54 - prefix_len - len(value))
 
-    rows = []
-    # Primary
-    first = chunks[0]
-    rows.append(
+    text = chunks[0]
+    return [
         [
             ("cc", ". "),
             ("key", "Lang"),
             ("cc", ": "),
-            ("cc", lang_dots_for(first, LANG_FIRST_PREFIX), {"id": "lang_data_dots"}),
-            ("value", first, {"id": "lang_data"}),
+            ("cc", lang_dots_for(text, LANG_FIRST_PREFIX), {"id": "lang_data_dots"}),
+            ("value", text, {"id": "lang_data"}),
         ]
-    )
-    # Continuations — same right-justify style
-    for i, chunk in enumerate(chunks[1:], start=1):
-        rows.append(
-            [
-                ("cc", ". "),
-                (
-                    "cc",
-                    lang_dots_for(chunk, LANG_CONT_PREFIX),
-                    {"id": f"lang_data_{i}_dots"},
-                ),
-                ("value", chunk, {"id": f"lang_data_{i}"}),
-            ]
-        )
-    return rows
+    ]
 
 
 def build_rows(cfg: dict, lang_chunks: list[str] | None = None) -> list:

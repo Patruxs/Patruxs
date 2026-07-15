@@ -32,22 +32,14 @@ SVG_TARGETS = [
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
 # => AGE_JUSTIFY_LEN + 11 == 54 => 43
 AGE_JUSTIFY_LEN = 43
-# Lang monospaced layout (LINE_WIDTH 54)
-#
-# Every language line is right-justified with filler dots:
-#   . Lang: ................TypeScript · Java · HTML · CSS
-#   . ......................Python · JavaScript · Go
-#   . .....................SCSS · Shell · PowerShell
+# Lang — single right-justified line (by code size across owned non-fork repos)
+#   . Lang: .......... TypeScript · Java · HTML · CSS +12
 #
 LINE_WIDTH = 54
-# Primary prefix ". Lang: " = 8 → first-line value budget for packing
 LANG_FIRST_PREFIX = 8  # len(". Lang: ")
-LANG_CONT_PREFIX = 2  # ". "
-LANG_FIRST_BUDGET = 35  # leave room for dots after the label
-LANG_CONT_BUDGET = 40  # leave some dots on continuation lines too
-LANG_JUSTIFY_LEN = 40  # legacy alias
-LANG_MAX_ROWS = 6
-LANG_MAX_N = 50
+LANG_VALUE_BUDGET = LINE_WIDTH - LANG_FIRST_PREFIX  # 46
+LANG_TOP_N = 4  # show the N most-used languages
+LANG_MAX_N = 50  # max languages counted for "+N"
 LANG_SEP = " · "
 QUERY_COUNT = {
     'user_getter': 0,
@@ -447,78 +439,53 @@ def languages_getter(username):
     return [name for name, _size in ranked[:LANG_MAX_N]]
 
 
-def _pack_names_into_line(names, start, budget, reserve_overflow=False):
-    """Pack names[start:] into one line up to budget. Returns (text, next_index)."""
-    row = []
-    i = start
-    n = len(names)
-    while i < n:
-        name = names[i]
-        trial = name if not row else LANG_SEP.join(row + [name])
-        remaining_after = n - i - 1
-        limit = budget
-        if reserve_overflow and remaining_after > 0:
-            limit = budget - len(f'{LANG_SEP}+{remaining_after}')
-
-        if not row and len(name) > budget:
-            return name[:budget], i + 1
-        if len(trial) > max(limit, 1):
-            break
-        row.append(name)
-        i += 1
-    return (LANG_SEP.join(row) if row else ''), i
-
-
 def pack_lang_chunks(names):
     """
-    Pack ranked language names into 1..LANG_MAX_ROWS right-justified lines.
+    Top LANG_TOP_N languages on one line, plus " +N" for the rest.
 
-        . Lang: ................TypeScript · Java · HTML · CSS
-        . ......................Python · JavaScript · Go
-        . .....................SCSS · Shell · PowerShell
+        . Lang: .......... TypeScript · Java · HTML · CSS +12
+
+    Returns a one-element list for compatibility with lang_rows / svg_overwrite.
     """
     if not names:
-        return ['N/A']
+        return ["N/A"]
 
-    budgets = [LANG_FIRST_BUDGET] + [LANG_CONT_BUDGET] * (LANG_MAX_ROWS - 1)
-    chunks = []
-    i = 0
-    n = len(names)
+    shown = names[:LANG_TOP_N]
+    extra = max(0, len(names) - len(shown))
+    text = LANG_SEP.join(shown)
 
-    for row_idx, budget in enumerate(budgets):
-        if i >= n:
-            break
-        is_last = row_idx == len(budgets) - 1
-        text, i = _pack_names_into_line(
-            names, i, budget, reserve_overflow=is_last and i < n
-        )
-        if not text:
-            text = names[i][:budget]
-            i += 1
-        chunks.append(text)
-        if is_last:
-            break
+    if extra > 0:
+        suffix = f" +{extra}"
+        while shown and len(text) + len(suffix) > LANG_VALUE_BUDGET:
+            shown.pop()
+            extra = len(names) - len(shown)
+            suffix = f" +{extra}"
+            text = LANG_SEP.join(shown)
+        text = (text + suffix) if shown else f"+{extra}"
+    else:
+        while len(text) > LANG_VALUE_BUDGET and len(shown) > 1:
+            shown.pop()
+            text = LANG_SEP.join(shown)
+        if len(text) > LANG_VALUE_BUDGET:
+            text = text[:LANG_VALUE_BUDGET]
 
-    if i < n:
-        extra = n - i
-        suffix = f'{LANG_SEP}+{extra}'
-        last_budget = budgets[min(len(chunks) - 1, len(budgets) - 1)]
-        last = chunks[-1]
-        if len(last) + len(suffix) <= last_budget:
-            chunks[-1] = last + suffix
-        else:
-            parts = last.split(LANG_SEP)
-            while parts and len(LANG_SEP.join(parts) + suffix) > last_budget:
-                parts.pop()
-            chunks[-1] = (LANG_SEP.join(parts) + suffix) if parts else f'+{extra}'
-
-    return chunks
+    return [text]
 
 
 def lang_dots_for(value: str, prefix_len: int = LANG_FIRST_PREFIX) -> str:
-    """Filler dots so prefix + dots + value fills LINE_WIDTH (right-justified)."""
+    """
+    Filler between ': ' and the value.
+
+    Prefer a visible run of dots with a trailing space when there is room:
+      . Lang: .......... TypeScript · Java · …
+    """
     room = LINE_WIDTH - prefix_len - len(value)
-    return "." * max(0, room)
+    if room <= 0:
+        return ""
+    if room == 1:
+        return " "
+    # dots + trailing space (e.g. room=11 → ".......... ")
+    return ("." * (room - 1)) + " "
 
 
 def svg_overwrite(
@@ -544,18 +511,12 @@ def svg_overwrite(
     root = tree.getroot()
     # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
-    # Lang: every line right-justified with filler dots
+    # Lang: single right-justified line (ids: lang_data, lang_data_dots)
     if lang_data is not None:
         chunks = lang_data if isinstance(lang_data, list) else [lang_data]
-        if not chunks:
-            chunks = ['N/A']
-        find_and_replace(root, 'lang_data', chunks[0])
-        find_and_replace(root, 'lang_data_dots', lang_dots_for(chunks[0], LANG_FIRST_PREFIX))
-        for i, chunk in enumerate(chunks[1:], start=1):
-            find_and_replace(root, f'lang_data_{i}', chunk)
-            find_and_replace(
-                root, f'lang_data_{i}_dots', lang_dots_for(chunk, LANG_CONT_PREFIX)
-            )
+        text = chunks[0] if chunks else "N/A"
+        find_and_replace(root, "lang_data", text)
+        find_and_replace(root, "lang_data_dots", lang_dots_for(text, LANG_FIRST_PREFIX))
     if commit_data is not None:
         justify_format(root, 'commit_data', commit_data, 22)
     if star_data is not None:
