@@ -464,18 +464,11 @@ def ensure_stats_styles(svg: str, path: Path) -> str:
         f"font-size: 15px; fill: {del_fill}; font-weight: bold; }}\n"
     )
     svg2, n = re.subn(
-        r"(    \.cursor-blink \{[^}]+\}\n)",
+        r"(  </style>)",
         block + r"\1",
         svg,
         count=1,
     )
-    if n == 0:
-        svg2, n = re.subn(
-            r"(  </style>)",
-            block + r"\1",
-            svg,
-            count=1,
-        )
     return svg2 if n else svg
 
 
@@ -524,14 +517,21 @@ def strip_panel_borders(svg: str) -> str:
     return svg
 
 
+# SYSTEM.INFO + ASCII sit under <g transform="translate(0, 38)"> (titlebar clearance).
+CONTENT_Y_OFFSET = 38
+# Room below last baseline for font descent + rounded SVG corner.
+BOTTOM_PAD = 28
+
+
 def expand_canvas_for_rows(svg: str, n: int) -> str:
-    """Grow banner/panel height if the SYSTEM.INFO block needs more vertical room."""
+    """Size banner/panel height to fit SYSTEM.INFO content (no extra white space)."""
     last_y = INFO_START_Y + (n - 1) * INFO_STEP
-    # padding under last line + bottom margin
-    needed_height = max(610, last_y + 50)
+    # local y is inside the translated group → screen y = local + CONTENT_Y_OFFSET
+    needed_height = last_y + CONTENT_Y_OFFSET + BOTTOM_PAD
     panel_h = needed_height - 30  # panels start at y=10, leave ~20 bottom
     ascii_h = panel_h - 12
-    reveal_h = needed_height - 50
+    reveal_h = needed_height - 10
+    scan_to = needed_height + 70
 
     def repl_svg_open(m: re.Match) -> str:
         tag = m.group(0)
@@ -585,6 +585,27 @@ def expand_canvas_for_rows(svg: str, n: int) -> str:
         svg,
         count=1,
     )
+    # horizontal scan beam travel end (off bottom of canvas)
+    svg = re.sub(
+        r'(animateTransform[^>]*to="0 )\d+(")',
+        rf"\g<1>{scan_to}\2",
+        svg,
+        count=1,
+    )
+    return svg
+
+
+def strip_cursor(svg: str) -> str:
+    """Remove the blinking terminal cursor (and its CSS) if present."""
+    svg = re.sub(
+        r'\n  <rect x="619" y="\d+" width="9" height="16" class="cursor-blink"[^>]*>\s*'
+        r'(?:<animate[^/]*/>\s*)?</rect>',
+        '',
+        svg,
+        count=1,
+        flags=re.DOTALL,
+    )
+    svg = re.sub(r'\n    \.cursor-blink \{[^}]+\}\n', '\n', svg, count=1)
     return svg
 
 
@@ -634,35 +655,14 @@ def patch_svg(path: Path, rows: list) -> None:
     if n_groups == 0:
         raise RuntimeError(f"{path.name}: could not find SYSTEM.INFO <g clip-path=lc*> blocks")
 
-    # 3) Cursor position + timing after last line
-    cursor_begin = ANIM_BEGIN0 + (n - 1) * ANIM_STEP + ANIM_DUR
-    cursor_y = INFO_START_Y + (n - 1) * INFO_STEP - 8
-    svg4, n_cur_y = re.subn(
-        r'(<rect x="619" y=")\d+(" width="9" height="16" class="cursor-blink")',
-        rf"\g<1>{cursor_y}\2",
-        svg3,
-        count=1,
-    )
-    if n_cur_y == 0:
-        svg4 = svg3
+    # 3) Drop blinking cursor (not wanted on profile banner)
+    svg4 = strip_cursor(svg3)
 
-    svg5, n_cur = re.subn(
-        r'(class="cursor-blink"[^>]*>\s*<animate[^>]*begin=")[^"]+(")',
-        rf"\g<1>{cursor_begin:.2f}s\g<2>",
-        svg4,
-        count=1,
-    )
-    if n_cur == 0:
-        svg5, n_cur = re.subn(
-            r'(<animate attributeName="opacity"[^>]*begin=")[^"]+(")',
-            rf"\g<1>{cursor_begin:.2f}s\g<2>",
-            svg4,
-            count=1,
-        )
-
-    path.write_text(svg5, encoding="utf-8")
+    path.write_text(svg4, encoding="utf-8")
     ET.parse(path)  # validate XML
-    print(f"  updated {path.name}  ({n} rows, cursor y={cursor_y} @{cursor_begin:.2f}s)")
+    last_y = INFO_START_Y + (n - 1) * INFO_STEP
+    h = last_y + CONTENT_Y_OFFSET + BOTTOM_PAD
+    print(f"  updated {path.name}  ({n} rows, height={h}, no cursor)")
 
 
 def main() -> int:

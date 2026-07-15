@@ -13,10 +13,10 @@ INPUT = ROOT / "assets" / "portrait.txt"
 OUTPUT = ROOT / "assets" / "portrait_tspan.txt"
 
 # Keep portrait vertically aligned with SYSTEM.INFO
-# (update_system_info.py: INFO_START_Y=42, step 22)
+# (matched to SYSTEM.INFO y=42→438)
 START_X = 17
 START_Y = 42.0
-END_Y = 570.0
+END_Y = 438.0
 TEXT_LENGTH = 561
 
 lines = [l.rstrip() for l in INPUT.read_text(encoding="utf-8", errors="ignore").splitlines()]
