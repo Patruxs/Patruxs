@@ -311,27 +311,37 @@ def github_stats_rows(p: dict | None = None) -> list:
 
 def core_lang_rows(chunks: list[str] | None) -> list:
     """
-    Primary Core.Lang row + hang-indent continuation rows.
-    chunks come from today.pack_lang_chunks (all languages, size-desc).
+    Polished multi-line Core.Lang block — left-aligned language list:
+
+        . Core.Lang: TypeScript · Java · HTML · CSS · Python
+        .            JavaScript · Go · SCSS · Shell · PowerShell
+        .            Lua · Dockerfile
+
+    Value column always starts at the same character index (after ". Core.Lang: ").
     """
     if not chunks:
         chunks = [" "]
-    rows = []
-    # Primary labeled row with live ids
-    rows.append(
-        render_segments(
-            "kv",
-            key="Core.Lang",
-            value=chunks[0],
-            dots_id="lang_data_dots",
-            value_id="lang_data",
-        )
-    )
-    # Continuation lines: ". " + hang indent + value
+
     try:
         from today import LANG_HANG_INDENT
     except Exception:
-        LANG_HANG_INDENT = 12
+        LANG_HANG_INDENT = 11  # len(". Core.Lang: ") - len(". ")
+
+    rows = []
+    # Primary: no filler dots — single space after colon (clean list header)
+    rows.append(
+        [
+            ("cc", ". "),
+            ("key", "Core"),
+            ("cc", "."),
+            ("key", "Lang"),
+            ("cc", ":"),
+            # live-rewritable spacer (today.py sets to " ")
+            ("cc", " ", {"id": "lang_data_dots"}),
+            ("value", chunks[0], {"id": "lang_data"}),
+        ]
+    )
+    # Continuations: hang under the value column
     for i, chunk in enumerate(chunks[1:], start=1):
         rows.append(
             [

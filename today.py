@@ -27,14 +27,19 @@ SVG_TARGETS = [
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
 # => AGE_JUSTIFY_LEN + 11 == 54 => 43
 AGE_JUSTIFY_LEN = 43
-# Core.Lang monospaced budgets (LINE_WIDTH 54 in update_system_info.py)
-# ". Core.Lang:" = 12 chars → first-line value budget 40
-LANG_JUSTIFY_LEN = 40
-LANG_HANG_INDENT = 12  # spaces after ". " on continuation rows
-LANG_CONT_BUDGET = 40  # 54 - 2 - 12
+# Core.Lang monospaced layout (LINE_WIDTH 54 in update_system_info.py)
+# Fixed left column so every language line starts at the same x:
+#   ". Core.Lang: "  = 13 chars
+#   ". " + hang(11)  = 13 chars
+# Value budget = 54 - 13 = 41
+LANG_LABEL = "Core.Lang"
+LANG_PREFIX_LEN = 13  # len(". Core.Lang: ")
+LANG_HANG_INDENT = LANG_PREFIX_LEN - 2  # spaces after ". " on cont rows (= 11)
+LANG_VALUE_BUDGET = 54 - LANG_PREFIX_LEN  # 41
+LANG_JUSTIFY_LEN = LANG_VALUE_BUDGET  # kept for single-line fallback
 LANG_MAX_ROWS = 6  # 1 primary + 5 continuation
 LANG_MAX_N = 50  # safety cap on ranked language names
-LANG_SEP = ", "
+LANG_SEP = " · "  # polished terminal separator
 QUERY_COUNT = {
     'user_getter': 0,
     'follower_getter': 0,
@@ -435,73 +440,68 @@ def languages_getter(username):
 
 def pack_lang_chunks(names):
     """
-    Pack ranked language names into 1..LANG_MAX_ROWS monospaced display lines.
-    Returns list[str] for Core.Lang primary + hang-indent continuation rows.
+    Pack ranked language names into 1..LANG_MAX_ROWS left-aligned lines.
+
+    All lines share the same value column so the block reads as a clean list:
+
+        . Core.Lang: TypeScript · Java · HTML · CSS · Python
+        .            JavaScript · Go · SCSS · Shell · PowerShell
+        .            Lua · Dockerfile
     """
     if not names:
         return ['N/A']
 
-    budgets = [LANG_JUSTIFY_LEN] + [LANG_CONT_BUDGET] * (LANG_MAX_ROWS - 1)
+    budget = LANG_VALUE_BUDGET
     chunks = []
     i = 0
     n = len(names)
 
-    for row_idx, budget in enumerate(budgets):
+    for row_idx in range(LANG_MAX_ROWS):
         if i >= n:
             break
-        is_last_row = row_idx == len(budgets) - 1
+        is_last_row = row_idx == LANG_MAX_ROWS - 1
         row = []
 
         while i < n:
             name = names[i]
             trial = name if not row else LANG_SEP.join(row + [name])
             remaining_after = n - i - 1
+
+            # On last row, reserve room for " · +N" if more remain
             limit = budget
             if is_last_row and remaining_after > 0:
-                # reserve room for ", +N" overflow marker
-                limit = budget - len(f', +{remaining_after}')
+                limit = budget - len(f'{LANG_SEP}+{remaining_after}')
 
             if not row and len(name) > budget:
                 row.append(name[:budget])
                 i += 1
                 break
-            if row and len(trial) > max(limit, 1):
-                break
-            if not row and len(name) > max(limit, 1) and is_last_row and remaining_after > 0:
-                row.append(name[: max(limit, 1)])
-                i += 1
+            if len(trial) > max(limit, 1):
+                if not row:
+                    # single oversize name on a non-last packing attempt
+                    row.append(name[: max(limit, 1)])
+                    i += 1
                 break
 
             row.append(name)
             i += 1
 
-            if is_last_row and i < n:
-                # try to keep packing if next + suffix still fits
-                nxt = names[i]
-                rem = n - i - 1
-                trial2 = LANG_SEP.join(row + [nxt])
-                suf = len(f', +{rem}') if rem > 0 else 0
-                if len(trial2) + (suf if rem > 0 else 0) > budget:
-                    break
+        if row:
+            chunks.append(LANG_SEP.join(row))
 
-        chunks.append(LANG_SEP.join(row) if row else '')
-
-    # Drop empty trailing
-    chunks = [c for c in chunks if c]
     if not chunks:
         return ['N/A']
 
-    # Overflow: append ", +N" to last chunk
+    # Overflow marker on last line
     if i < n:
         extra = n - i
-        suffix = f', +{extra}'
-        last_budget = budgets[min(len(chunks) - 1, len(budgets) - 1)]
+        suffix = f'{LANG_SEP}+{extra}'
         last = chunks[-1]
-        if len(last) + len(suffix) <= last_budget:
+        if len(last) + len(suffix) <= budget:
             chunks[-1] = last + suffix
         else:
             parts = last.split(LANG_SEP)
-            while parts and len(LANG_SEP.join(parts) + suffix) > last_budget:
+            while parts and len(LANG_SEP.join(parts) + suffix) > budget:
                 parts.pop()
             chunks[-1] = (LANG_SEP.join(parts) + suffix) if parts else f'+{extra}'
 
@@ -531,12 +531,14 @@ def svg_overwrite(
     root = tree.getroot()
     # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
-    # Core.Lang (ids: lang_data, lang_data_dots, lang_data_1, ...)
+    # Core.Lang — left-aligned list (no right-justify dots; keeps hang indent clean)
     if lang_data is not None:
         chunks = lang_data if isinstance(lang_data, list) else [lang_data]
         if not chunks:
             chunks = ['N/A']
-        justify_format(root, 'lang_data', chunks[0], LANG_JUSTIFY_LEN)
+        find_and_replace(root, 'lang_data', chunks[0])
+        # clear dots so primary line is ". Core.Lang: <langs>" (single space after colon)
+        find_and_replace(root, 'lang_data_dots', ' ')
         for i, chunk in enumerate(chunks[1:], start=1):
             find_and_replace(root, f'lang_data_{i}', chunk)
     if commit_data is not None:
