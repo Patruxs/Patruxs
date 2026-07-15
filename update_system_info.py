@@ -31,7 +31,9 @@ CLIP_START_Y = 26.0
 ANIM_BEGIN0 = 0.75
 ANIM_STEP = 0.115
 ANIM_DUR = 0.38
-# Dot padding target: length of "Key: " + dots + " " + value ≈ this
+# Total monospaced width of a simple ". Key: ... value" row (right-align values)
+LINE_WIDTH = 54
+# Kept for callers that still pass DOT_WIDTH-style budgets
 DOT_WIDTH = 50
 
 # Placeholder stats (overwritten by today.py when ACCESS_TOKEN is set)
@@ -139,10 +141,15 @@ def _parse_simple_yaml(text: str) -> dict:
     return data
 
 
-def pad_dots(key: str, value: str, width: int = DOT_WIDTH) -> str:
-    """Return dots so 'Key: ... Value' aligns roughly."""
-    label = f"{key}: "
-    room = width - len(label) - len(value)
+def pad_dots(key: str, value: str, width: int = LINE_WIDTH) -> str:
+    """
+    Return dots so a full row aligns to a fixed monospaced width:
+
+        . {key}: {dots} {value}
+    """
+    # ". " + key + ": " + dots + " " + value
+    fixed = 2 + len(key) + 2 + 1 + len(value)
+    room = width - fixed
     return "." * max(3, room)
 
 
@@ -180,14 +187,17 @@ def render_segments(kind: str, **kwargs) -> list:
                 ("value", value),
             ]
         dots = pad_dots(key, value)
-        # Match requested Uptime shape: key, bare ":", dots id, value id
+        # Uptime (and similar live fields): same alignment as other kv rows
         if dots_id or value_id:
+            value_text = value if value else " "
+            # recompute dots for possibly empty live value; today.py rewrites both
+            dots = pad_dots(key, value_text)
             dots_seg: tuple = ("cc", f" {dots} ")
             if dots_id:
                 dots_seg = ("cc", f" {dots} ", {"id": dots_id})
-            value_seg: tuple = ("value", value if value else " ")
+            value_seg: tuple = ("value", value_text)
             if value_id:
-                value_seg = ("value", value if value else " ", {"id": value_id})
+                value_seg = ("value", value_text, {"id": value_id})
             return [
                 ("cc", ". "),
                 ("key", key),
@@ -204,22 +214,34 @@ def render_segments(kind: str, **kwargs) -> list:
     raise ValueError(f"unknown kind {kind}")
 
 
+def justify_dots(value: str, length: int) -> str:
+    """Match today.py justify_format dot padding for a value column."""
+    just_len = max(0, length - len(str(value)))
+    if just_len <= 2:
+        return {0: "", 1: " ", 2: ". "}[just_len]
+    return " " + ("." * just_len) + " "
+
+
 def github_stats_rows(p: dict | None = None) -> list:
     """
     GitHub Stats block under Contact.
     IDs match today.py: repo_data, contrib_data, star_data, commit_data,
     follower_data, loc_data, loc_add, loc_del (+ *_dots where used).
+
+    Column budgets match today.py justify_format lengths:
+      repos:6  stars:14  commits:22  followers:10  loc:9  loc_del:7
     """
     p = {**GH_PLACEHOLDERS, **(p or {})}
     rows = []
     rows.append(render_segments("section", title="GitHub Stats"))
+
     # . Repos: .... N {Contributed: M} | Stars: ........... S
     rows.append(
         [
             ("cc", ". "),
             ("key", "Repos"),
             ("cc", ":"),
-            ("cc", " .... ", {"id": "repo_data_dots"}),
+            ("cc", justify_dots(p["repos"], 6), {"id": "repo_data_dots"}),
             ("value", p["repos"], {"id": "repo_data"}),
             ("cc", " {"),
             ("key", "Contributed"),
@@ -228,38 +250,40 @@ def github_stats_rows(p: dict | None = None) -> list:
             ("cc", "} | "),
             ("key", "Stars"),
             ("cc", ":"),
-            ("cc", " ........... ", {"id": "star_data_dots"}),
+            ("cc", justify_dots(p["stars"], 14), {"id": "star_data_dots"}),
             ("value", p["stars"], {"id": "star_data"}),
         ]
     )
+
     # . Commits: ................. N | Followers: ....... M
     rows.append(
         [
             ("cc", ". "),
             ("key", "Commits"),
             ("cc", ":"),
-            ("cc", " ................. ", {"id": "commit_data_dots"}),
+            ("cc", justify_dots(p["commits"], 22), {"id": "commit_data_dots"}),
             ("value", p["commits"], {"id": "commit_data"}),
             ("cc", " | "),
             ("key", "Followers"),
             ("cc", ":"),
-            ("cc", " ....... ", {"id": "follower_data_dots"}),
+            ("cc", justify_dots(p["followers"], 10), {"id": "follower_data_dots"}),
             ("value", p["followers"], {"id": "follower_data"}),
         ]
     )
-    # . Lines of Code on GitHub:. N ( A++, D-- )
+
+    # . Lines of Code on GitHub: . N ( A++, D-- )
     rows.append(
         [
             ("cc", ". "),
             ("key", "Lines of Code on GitHub"),
             ("cc", ":"),
-            ("cc", ". ", {"id": "loc_data_dots"}),
+            ("cc", justify_dots(p["loc"], 9), {"id": "loc_data_dots"}),
             ("value", p["loc"], {"id": "loc_data"}),
             ("cc", " ( "),
             ("addColor", p["loc_add"], {"id": "loc_add"}),
             ("addColor", "++"),
             ("cc", ", "),
-            ("", " ", {"id": "loc_del_dots"}),
+            ("", justify_dots(p["loc_del"], 7) or " ", {"id": "loc_del_dots"}),
             ("delColor", p["loc_del"], {"id": "loc_del"}),
             ("delColor", "--"),
             ("cc", " )"),
@@ -404,16 +428,22 @@ def expand_canvas_for_rows(svg: str, n: int) -> str:
     needed_height = max(610, last_y + 50)
     panel_h = needed_height - 30  # panels start at y=10, leave ~20 bottom
     ascii_h = panel_h - 12
+    reveal_h = needed_height - 50
 
     def repl_svg_open(m: re.Match) -> str:
         tag = m.group(0)
         tag = re.sub(r'\bheight="\d+"', f'height="{needed_height}"', tag)
         tag = re.sub(
             r'viewBox="0 0 (\d+) \d+"',
-            rf'viewBox="0 0 \1 {needed_height}"',
+            lambda mm: f'viewBox="0 0 {mm.group(1)} {needed_height}"',
             tag,
         )
+        # fix accidental escaped quotes from older buggy runs
+        tag = tag.replace('\\"', '"')
         return tag
+
+    # Repair any prior bad height="N\" attributes first
+    svg = svg.replace('\\"', '"')
 
     svg = re.sub(r"<svg\b[^>]*>", repl_svg_open, svg, count=1)
     # full-bleed background rects
@@ -422,27 +452,33 @@ def expand_canvas_for_rows(svg: str, n: int) -> str:
         rf"\g<1>{needed_height}\2",
         svg,
     )
-    # left/right glass panels
+    # left/right glass panels (never inject backslashes)
     svg = re.sub(
-        r'(<rect x="14" y="10" width="567" height=")\d+"',
-        rf"\g<1>{panel_h}\"",
+        r'(<rect x="14" y="10" width="567" height=")\d+(")',
+        rf"\g<1>{panel_h}\2",
         svg,
     )
     svg = re.sub(
-        r'(<rect x="599" y="10" width="567" height=")\d+"',
-        rf"\g<1>{panel_h}\"",
+        r'(<rect x="599" y="10" width="567" height=")\d+(")',
+        rf"\g<1>{panel_h}\2",
         svg,
     )
-    # ASCII clip rect inside left panel
+    # ASCII clip rect inside left panel (clipPath + any loose rect)
     svg = re.sub(
-        r'(<rect x="15" y="26" width="565" height=")\d+"',
-        rf"\g<1>{ascii_h}\"",
+        r'(<rect x="15" y="26" width="565" height=")\d+(")',
+        rf"\g<1>{ascii_h}\2",
         svg,
     )
-    # reveal curtain target height
+    # reveal mask bounds + curtain target height
+    svg = re.sub(
+        r'(<mask id="revealMask"[^>]*height=")\d+(")',
+        rf"\g<1>{needed_height}\2",
+        svg,
+        count=1,
+    )
     svg = re.sub(
         r'(attributeName="height" from="0" to=")\d+(")',
-        rf"\g<1>{needed_height - 50}\2",
+        rf"\g<1>{reveal_h}\2",
         svg,
         count=1,
     )

@@ -23,8 +23,10 @@ SVG_TARGETS = [
     os.path.join(ROOT, 'dark.svg'),
     os.path.join(ROOT, 'light.svg'),
 ]
-# Dot budget for the age/uptime value column (matches panel alignment)
-AGE_JUSTIFY_LEN = 42
+# Dot budget for the age/uptime value column
+# Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
+# => AGE_JUSTIFY_LEN + 11 == 54 => 43
+AGE_JUSTIFY_LEN = 43
 QUERY_COUNT = {'user_getter': 0, 'follower_getter': 0, 'graph_repos_stars': 0, 'recursive_loc': 0, 'graph_commits': 0, 'loc_query': 0}
 
 
