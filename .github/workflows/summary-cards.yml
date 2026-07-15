@@ -1,0 +1,44 @@
+name: Profile summary cards
+
+# Regenerates static cards into profile-summary-card-output/
+# so the README does not depend on the shared Vercel API
+# (which rate-limits and shows ERROR!!! on GitHub Camo).
+
+on:
+  schedule:
+    - cron: "30 0 * * *" # daily, after banner update
+  workflow_dispatch:
+
+concurrency:
+  group: profile-summary-cards
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: generate-github-profile-summary-cards
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate cards (github_dark)
+        uses: vn7n24fzkq/github-profile-summary-cards@release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN || secrets.SUMMARY_GITHUB_TOKEN || github.token }}
+        with:
+          USERNAME: ${{ github.repository_owner }}
+          BRANCH_NAME: main
+          THEME: github_dark
+          AUTO_PUSH: true
+
+      - name: Generate cards (github)
+        uses: vn7n24fzkq/github-profile-summary-cards@release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN || secrets.SUMMARY_GITHUB_TOKEN || github.token }}
+        with:
+          USERNAME: ${{ github.repository_owner }}
+          BRANCH_NAME: main
+          THEME: github
+          AUTO_PUSH: true
