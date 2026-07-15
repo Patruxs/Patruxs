@@ -1,14 +1,14 @@
 name: Update profile banners
 
 on:
-  # Refresh Uptime, Core.Lang, and GitHub Stats daily (midnight UTC)
+  # Daily refresh: Uptime, Core.Lang (all languages), GitHub Stats
   schedule:
     - cron: "0 0 * * *"
 
   # Allow manual runs from the Actions tab
   workflow_dispatch:
 
-  # Re-run when the script or this workflow changes
+  # Re-run when scripts or this workflow change
   push:
     branches:
       - main
@@ -18,16 +18,22 @@ on:
       - "system_info.yaml"
       - ".github/workflows/update-uptime.yml"
 
+concurrency:
+  group: update-profile-banners
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,31 +47,42 @@ jobs:
 
       - name: Run today.py
         env:
-          # Defaults to the repo owner (Patruxs)
           USER_NAME: ${{ github.repository_owner }}
-          # Prefer a PAT in secrets.ACCESS_TOKEN (private repos + broader GraphQL).
-          # Falls back to the job token for public language/stats updates.
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN != '' && secrets.ACCESS_TOKEN || github.token }}
-          # Optional: set repo variable BIRTHDAY as YYYY-MM-DD to pin a start date.
-          # Without it, Uptime uses the GitHub account created_at date.
+          # PAT recommended for private repos + full LOC/stats.
+          # Falls back to job token for public language/stats updates.
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
+          # Optional repo variable: YYYY-MM-DD
           BIRTHDAY: ${{ vars.BIRTHDAY }}
         run: python today.py
 
       - name: Commit and push banner updates
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Uptime + Core.Lang + GitHub Stats land in the SVGs
           git add dark.svg light.svg
+
+          # cache/ is gitignored; force-add so LOC stats stay warm between runs
           if [ -d cache ]; then
-            git add cache || true
+            git add -f cache || true
           fi
 
           if git diff --staged --quiet; then
-            echo "No SVG changes to commit"
+            echo "No banner/cache changes to commit"
             exit 0
           fi
 
           git commit -m "chore: update profile banners (uptime, languages, stats) [skip ci]"
-          git push
+
+          # Survive concurrent pushes (e.g. snake animation)
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            echo "Push attempt $i failed; retrying..."
+            sleep 5
+          done
+          echo "Failed to push after retries"
+          exit 1

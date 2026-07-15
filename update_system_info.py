@@ -309,7 +309,41 @@ def github_stats_rows(p: dict | None = None) -> list:
     return rows
 
 
-def build_rows(cfg: dict) -> list:
+def core_lang_rows(chunks: list[str] | None) -> list:
+    """
+    Primary Core.Lang row + hang-indent continuation rows.
+    chunks come from today.pack_lang_chunks (all languages, size-desc).
+    """
+    if not chunks:
+        chunks = [" "]
+    rows = []
+    # Primary labeled row with live ids
+    rows.append(
+        render_segments(
+            "kv",
+            key="Core.Lang",
+            value=chunks[0],
+            dots_id="lang_data_dots",
+            value_id="lang_data",
+        )
+    )
+    # Continuation lines: ". " + hang indent + value
+    try:
+        from today import LANG_HANG_INDENT
+    except Exception:
+        LANG_HANG_INDENT = 12
+    for i, chunk in enumerate(chunks[1:], start=1):
+        rows.append(
+            [
+                ("cc", ". "),
+                ("cc", " " * LANG_HANG_INDENT),
+                ("value", chunk, {"id": f"lang_data_{i}"}),
+            ]
+        )
+    return rows
+
+
+def build_rows(cfg: dict, lang_chunks: list[str] | None = None) -> list:
     rows: list = []
     rows.append(render_segments("head", host=cfg["host"]))
 
@@ -333,16 +367,11 @@ def build_rows(cfg: dict) -> list:
                 )
             )
         elif key == "Core.Lang":
-            # Live languages from today.py (ids: lang_data, lang_data_dots)
-            rows.append(
-                render_segments(
-                    "kv",
-                    key=key,
-                    value=value or " ",
-                    dots_id="lang_data_dots",
-                    value_id="lang_data",
-                )
-            )
+            # Multi-line live languages (ids: lang_data, lang_data_1, …)
+            if lang_chunks:
+                rows.extend(core_lang_rows(lang_chunks))
+            else:
+                rows.extend(core_lang_rows([value or " "]))
         else:
             rows.append(render_segments("kv", key=key, value=value))
 
@@ -642,7 +671,33 @@ def main() -> int:
 
     print(f"Reading {CONFIG.name} ...")
     cfg = load_config(CONFIG)
-    rows = build_rows(cfg)
+
+    # Fetch languages before build so multi-line Core.Lang rows are created
+    age = None
+    lang_chunks = None
+    svg_overwrite_fn = None
+    try:
+        from today import (
+            USER_NAME,
+            daily_readme,
+            languages_getter,
+            pack_lang_chunks,
+            resolve_start_date,
+            svg_overwrite as svg_overwrite_fn,
+        )
+
+        age = daily_readme(resolve_start_date())
+        try:
+            lang_names = languages_getter(USER_NAME)
+            lang_chunks = pack_lang_chunks(lang_names)
+            print(f"  Core.Lang: {len(lang_names)} languages → {lang_chunks}")
+        except Exception as lang_exc:
+            print(f"  Note: languages not refreshed ({lang_exc})")
+            lang_chunks = None
+    except Exception as exc:
+        print(f"Note: live helpers unavailable ({exc}). Run: python3 today.py")
+
+    rows = build_rows(cfg, lang_chunks=lang_chunks)
     print(f"Built {len(rows)} SYSTEM.INFO rows for host={cfg.get('host')!r}")
 
     for target in TARGETS:
@@ -652,31 +707,18 @@ def main() -> int:
         print(f"Patching {target.name} ...")
         patch_svg(target, rows)
 
-    # Fill live Uptime + Core.Lang via today.py after structural rewrite
-    try:
-        from today import (
-            USER_NAME,
-            daily_readme,
-            languages_getter,
-            resolve_start_date,
-            svg_overwrite,
-        )
-
-        age = daily_readme(resolve_start_date())
+    # Fill live Uptime + Core.Lang values (structure already has the right row count)
+    if age is not None and svg_overwrite_fn is not None:
         try:
-            langs = languages_getter(USER_NAME)
-        except Exception as lang_exc:
-            print(f"  Note: languages not refreshed ({lang_exc})")
-            langs = None
-        for target in TARGETS:
-            if target.exists():
-                svg_overwrite(str(target), age, lang_data=langs)
-        msg = f"  refreshed Uptime via today.py → {age}"
-        if langs is not None:
-            msg += f" | Core.Lang → {langs}"
-        print(msg)
-    except Exception as exc:
-        print(f"Note: live fields not refreshed ({exc}). Run: python3 today.py")
+            for target in TARGETS:
+                if target.exists():
+                    svg_overwrite_fn(str(target), age, lang_data=lang_chunks)
+            msg = f"  refreshed Uptime via today.py → {age}"
+            if lang_chunks is not None:
+                msg += f" | Core.Lang → {lang_chunks}"
+            print(msg)
+        except Exception as exc:
+            print(f"Note: live field fill failed ({exc})")
 
     print("Done. Open dark.svg / light.svg to preview.")
     return 0

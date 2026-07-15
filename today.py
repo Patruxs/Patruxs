@@ -27,14 +27,14 @@ SVG_TARGETS = [
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
 # => AGE_JUSTIFY_LEN + 11 == 54 => 43
 AGE_JUSTIFY_LEN = 43
-# Core.Lang row: ". Core.Lang:" (12) + dots_tspan + value == 54
-# dots_tspan is ": {dots} " when static, or rewritten as " " + dots + " " by justify_format
-# With justify_format style " "+dots+" ": 12-1 + 2 + just_len + len(value) ...
-# Practical budget matching LINE_WIDTH 54 for "Core.Lang" label (9 chars):
-# fixed without dots = 2+9+2+1 = 14 → LANG_JUSTIFY_LEN = 40
+# Core.Lang monospaced budgets (LINE_WIDTH 54 in update_system_info.py)
+# ". Core.Lang:" = 12 chars → first-line value budget 40
 LANG_JUSTIFY_LEN = 40
-# Max top languages to show in Core.Lang (by total bytes across repos)
-LANG_TOP_N = 3
+LANG_HANG_INDENT = 12  # spaces after ". " on continuation rows
+LANG_CONT_BUDGET = 40  # 54 - 2 - 12
+LANG_MAX_ROWS = 6  # 1 primary + 5 continuation
+LANG_MAX_N = 50  # safety cap on ranked language names
+LANG_SEP = ", "
 QUERY_COUNT = {
     'user_getter': 0,
     'follower_getter': 0,
@@ -348,11 +348,11 @@ def stars_counter(data):
     return total_stars
 
 
-def languages_getter(username, top_n=LANG_TOP_N, max_value_len=36):
+def languages_getter(username):
     """
-    Aggregate languages across the user's non-fork repositories (by bytes of code).
-    Returns a compact string like "Java, TypeScript, Python".
-    Uses GraphQL when ACCESS_TOKEN is set (fewer requests), else public REST.
+    Aggregate languages across owned non-fork repos (by total bytes of code).
+    Returns a size-descending list of language names (all of them, up to LANG_MAX_N).
+    Uses GraphQL when ACCESS_TOKEN is set; else public REST.
     """
     query_count('languages_getter')
     totals = {}
@@ -372,7 +372,7 @@ def languages_getter(username, top_n=LANG_TOP_N, max_value_len=36):
                 ) {
                   pageInfo { hasNextPage endCursor }
                   nodes {
-                    languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+                    languages(first: 100, orderBy: {field: SIZE, direction: DESC}) {
                       edges { size node { name } }
                     }
                   }
@@ -427,18 +427,85 @@ def languages_getter(username, top_n=LANG_TOP_N, max_value_len=36):
             page += 1
 
     if not totals:
-        return 'N/A'
+        return []
 
     ranked = sorted(totals.items(), key=lambda kv: kv[1], reverse=True)
-    chosen = []
-    for name, _size in ranked:
-        trial = ', '.join(chosen + [name])
-        if chosen and len(trial) > max_value_len:
+    return [name for name, _size in ranked[:LANG_MAX_N]]
+
+
+def pack_lang_chunks(names):
+    """
+    Pack ranked language names into 1..LANG_MAX_ROWS monospaced display lines.
+    Returns list[str] for Core.Lang primary + hang-indent continuation rows.
+    """
+    if not names:
+        return ['N/A']
+
+    budgets = [LANG_JUSTIFY_LEN] + [LANG_CONT_BUDGET] * (LANG_MAX_ROWS - 1)
+    chunks = []
+    i = 0
+    n = len(names)
+
+    for row_idx, budget in enumerate(budgets):
+        if i >= n:
             break
-        chosen.append(name)
-        if len(chosen) >= top_n:
-            break
-    return ', '.join(chosen) if chosen else ranked[0][0]
+        is_last_row = row_idx == len(budgets) - 1
+        row = []
+
+        while i < n:
+            name = names[i]
+            trial = name if not row else LANG_SEP.join(row + [name])
+            remaining_after = n - i - 1
+            limit = budget
+            if is_last_row and remaining_after > 0:
+                # reserve room for ", +N" overflow marker
+                limit = budget - len(f', +{remaining_after}')
+
+            if not row and len(name) > budget:
+                row.append(name[:budget])
+                i += 1
+                break
+            if row and len(trial) > max(limit, 1):
+                break
+            if not row and len(name) > max(limit, 1) and is_last_row and remaining_after > 0:
+                row.append(name[: max(limit, 1)])
+                i += 1
+                break
+
+            row.append(name)
+            i += 1
+
+            if is_last_row and i < n:
+                # try to keep packing if next + suffix still fits
+                nxt = names[i]
+                rem = n - i - 1
+                trial2 = LANG_SEP.join(row + [nxt])
+                suf = len(f', +{rem}') if rem > 0 else 0
+                if len(trial2) + (suf if rem > 0 else 0) > budget:
+                    break
+
+        chunks.append(LANG_SEP.join(row) if row else '')
+
+    # Drop empty trailing
+    chunks = [c for c in chunks if c]
+    if not chunks:
+        return ['N/A']
+
+    # Overflow: append ", +N" to last chunk
+    if i < n:
+        extra = n - i
+        suffix = f', +{extra}'
+        last_budget = budgets[min(len(chunks) - 1, len(budgets) - 1)]
+        last = chunks[-1]
+        if len(last) + len(suffix) <= last_budget:
+            chunks[-1] = last + suffix
+        else:
+            parts = last.split(LANG_SEP)
+            while parts and len(LANG_SEP.join(parts) + suffix) > last_budget:
+                parts.pop()
+            chunks[-1] = (LANG_SEP.join(parts) + suffix) if parts else f'+{extra}'
+
+    return chunks
 
 
 def svg_overwrite(
@@ -455,14 +522,23 @@ def svg_overwrite(
     """
     Parse SVG files and update elements with uptime/age and optional GitHub stats.
     Only IDs that exist in the SVG are written (missing ones are skipped).
+
+    lang_data: str | list[str] | None
+      - str: single Core.Lang value (legacy)
+      - list: multi-line chunks (primary + continuation rows)
     """
     tree = etree.parse(filename)
     root = tree.getroot()
     # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
-    # Core.Lang (ids: lang_data, lang_data_dots)
+    # Core.Lang (ids: lang_data, lang_data_dots, lang_data_1, ...)
     if lang_data is not None:
-        justify_format(root, 'lang_data', lang_data, LANG_JUSTIFY_LEN)
+        chunks = lang_data if isinstance(lang_data, list) else [lang_data]
+        if not chunks:
+            chunks = ['N/A']
+        justify_format(root, 'lang_data', chunks[0], LANG_JUSTIFY_LEN)
+        for i, chunk in enumerate(chunks[1:], start=1):
+            find_and_replace(root, f'lang_data_{i}', chunk)
     if commit_data is not None:
         justify_format(root, 'commit_data', commit_data, 22)
     if star_data is not None:
@@ -636,10 +712,12 @@ if __name__ == '__main__':
     formatter('uptime calculation', age_time)
     print(f"   uptime text:           {age_data}")
 
-    # Always refresh Core.Lang from repository language stats
-    lang_data, lang_time = perf_counter(languages_getter, USER_NAME)
+    # Always refresh Core.Lang from repository language stats (ALL languages by size)
+    lang_names, lang_time = perf_counter(languages_getter, USER_NAME)
     formatter('languages', lang_time)
-    print(f"   core.lang:             {lang_data}")
+    lang_chunks = pack_lang_chunks(lang_names)
+    print(f"   core.lang names:       {len(lang_names)} → {lang_names}")
+    print(f"   core.lang rows:        {lang_chunks}")
 
     commit_data = star_data = repo_data = contrib_data = follower_data = None
     loc_slice = None
@@ -686,6 +764,20 @@ if __name__ == '__main__':
     else:
         print('   ACCESS_TOKEN not set — skipping stars/LOC/etc. (Core.Lang still updated)')
 
+    # Rebuild SYSTEM.INFO structure so multi-line Core.Lang rows exist
+    try:
+        from pathlib import Path as _Path
+
+        from update_system_info import CONFIG, build_rows, load_config, patch_svg
+
+        cfg = load_config(CONFIG)
+        rows = build_rows(cfg, lang_chunks=lang_chunks)
+        for svg_path in SVG_TARGETS:
+            if os.path.isfile(svg_path):
+                patch_svg(_Path(svg_path), rows)
+    except Exception as rebuild_exc:
+        print(f'WARNING: structure rebuild failed ({rebuild_exc}); writing live fields only')
+
     for svg_path in SVG_TARGETS:
         if not os.path.isfile(svg_path):
             print(f'WARNING: skip missing {svg_path}')
@@ -699,7 +791,7 @@ if __name__ == '__main__':
             contrib_data,
             follower_data,
             loc_slice,
-            lang_data,
+            lang_chunks,
         )
         print(f'   updated {os.path.basename(svg_path)}')
 
