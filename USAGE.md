@@ -52,7 +52,7 @@ fields:
   - key: ""
     value: ""
 
-  - key: Core.Lang
+  - key: Lang
     value: Java
 
 sections:

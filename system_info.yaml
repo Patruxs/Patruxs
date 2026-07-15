@@ -28,7 +28,7 @@ fields:
     value: Building · Learning · Shipping
 
   # Auto: ALL languages across owned non-fork repos (today.py / GitHub Action)
-  - key: Core.Lang
+  - key: Lang
     value: ""
 
 sections:

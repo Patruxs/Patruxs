@@ -309,11 +309,11 @@ def github_stats_rows(p: dict | None = None) -> list:
     return rows
 
 
-def core_lang_rows(chunks: list[str] | None) -> list:
+def lang_rows(chunks: list[str] | None) -> list:
     """
-    Multi-line Core.Lang — every line right-justified with filler dots:
+    Multi-line Lang — every line right-justified with filler dots:
 
-        . Core.Lang: ...........TypeScript · Java · HTML · CSS
+        . Lang: ................TypeScript · Java · HTML · CSS
         . ......................Python · JavaScript · Go
         . .....................SCSS · Shell · PowerShell
         . ...................PHP · Ruby · Lua · Dockerfile
@@ -325,10 +325,10 @@ def core_lang_rows(chunks: list[str] | None) -> list:
         from today import LANG_CONT_PREFIX, LANG_FIRST_PREFIX, LINE_WIDTH, lang_dots_for
     except Exception:
         LINE_WIDTH = 54
-        LANG_FIRST_PREFIX = 13
+        LANG_FIRST_PREFIX = 8  # len(". Lang: ")
         LANG_CONT_PREFIX = 2
 
-        def lang_dots_for(value: str, prefix_len: int = 13) -> str:
+        def lang_dots_for(value: str, prefix_len: int = 8) -> str:
             return "." * max(0, LINE_WIDTH - prefix_len - len(value))
 
     rows = []
@@ -337,8 +337,6 @@ def core_lang_rows(chunks: list[str] | None) -> list:
     rows.append(
         [
             ("cc", ". "),
-            ("key", "Core"),
-            ("cc", "."),
             ("key", "Lang"),
             ("cc", ": "),
             ("cc", lang_dots_for(first, LANG_FIRST_PREFIX), {"id": "lang_data_dots"}),
@@ -384,12 +382,13 @@ def build_rows(cfg: dict, lang_chunks: list[str] | None = None) -> list:
                     value_id="age_data",
                 )
             )
-        elif key == "Core.Lang":
+        elif key in ("Lang", "Core.Lang"):
             # Multi-line live languages (ids: lang_data, lang_data_1, …)
+            # Accept both "Lang" (current) and legacy "Core.Lang"
             if lang_chunks:
-                rows.extend(core_lang_rows(lang_chunks))
+                rows.extend(lang_rows(lang_chunks))
             else:
-                rows.extend(core_lang_rows([value or " "]))
+                rows.extend(lang_rows([value or " "]))
         else:
             rows.append(render_segments("kv", key=key, value=value))
 
@@ -690,7 +689,7 @@ def main() -> int:
     print(f"Reading {CONFIG.name} ...")
     cfg = load_config(CONFIG)
 
-    # Fetch languages before build so multi-line Core.Lang rows are created
+    # Fetch languages before build so multi-line Lang rows are created
     age = None
     lang_chunks = None
     svg_overwrite_fn = None
@@ -708,7 +707,7 @@ def main() -> int:
         try:
             lang_names = languages_getter(USER_NAME)
             lang_chunks = pack_lang_chunks(lang_names)
-            print(f"  Core.Lang: {len(lang_names)} languages → {lang_chunks}")
+            print(f"  Lang: {len(lang_names)} languages → {lang_chunks}")
         except Exception as lang_exc:
             print(f"  Note: languages not refreshed ({lang_exc})")
             lang_chunks = None
@@ -725,7 +724,7 @@ def main() -> int:
         print(f"Patching {target.name} ...")
         patch_svg(target, rows)
 
-    # Fill live Uptime + Core.Lang values (structure already has the right row count)
+    # Fill live Uptime + Lang values (structure already has the right row count)
     if age is not None and svg_overwrite_fn is not None:
         try:
             for target in TARGETS:
@@ -733,7 +732,7 @@ def main() -> int:
                     svg_overwrite_fn(str(target), age, lang_data=lang_chunks)
             msg = f"  refreshed Uptime via today.py → {age}"
             if lang_chunks is not None:
-                msg += f" | Core.Lang → {lang_chunks}"
+                msg += f" | Lang → {lang_chunks}"
             print(msg)
         except Exception as exc:
             print(f"Note: live field fill failed ({exc})")

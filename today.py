@@ -27,20 +27,18 @@ SVG_TARGETS = [
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
 # => AGE_JUSTIFY_LEN + 11 == 54 => 43
 AGE_JUSTIFY_LEN = 43
-# Core.Lang monospaced layout (LINE_WIDTH 54)
+# Lang monospaced layout (LINE_WIDTH 54)
 #
 # Every language line is right-justified with filler dots:
-#   . Core.Lang: ...........TypeScript · Java · HTML · CSS
+#   . Lang: ................TypeScript · Java · HTML · CSS
 #   . ......................Python · JavaScript · Go
 #   . .....................SCSS · Shell · PowerShell
-#   . ...................HCL · Batchfile · Go Template
-#   . ...................PHP · Ruby · Lua · Dockerfile
 #
 LINE_WIDTH = 54
-# Primary prefix ". Core.Lang: " = 13 → first-line value budget for packing
-LANG_FIRST_PREFIX = 13
+# Primary prefix ". Lang: " = 8 → first-line value budget for packing
+LANG_FIRST_PREFIX = 8  # len(". Lang: ")
 LANG_CONT_PREFIX = 2  # ". "
-LANG_FIRST_BUDGET = 30  # leave room for dots after the label
+LANG_FIRST_BUDGET = 35  # leave room for dots after the label
 LANG_CONT_BUDGET = 40  # leave some dots on continuation lines too
 LANG_JUSTIFY_LEN = 40  # legacy alias
 LANG_MAX_ROWS = 6
@@ -470,7 +468,7 @@ def pack_lang_chunks(names):
     """
     Pack ranked language names into 1..LANG_MAX_ROWS right-justified lines.
 
-        . Core.Lang: ...........TypeScript · Java · HTML · CSS
+        . Lang: ................TypeScript · Java · HTML · CSS
         . ......................Python · JavaScript · Go
         . .....................SCSS · Shell · PowerShell
     """
@@ -534,14 +532,14 @@ def svg_overwrite(
     Only IDs that exist in the SVG are written (missing ones are skipped).
 
     lang_data: str | list[str] | None
-      - str: single Core.Lang value (legacy)
+      - str: single Lang value (legacy)
       - list: multi-line chunks (primary + continuation rows)
     """
     tree = etree.parse(filename)
     root = tree.getroot()
     # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
-    # Core.Lang: every line right-justified with filler dots
+    # Lang: every line right-justified with filler dots
     if lang_data is not None:
         chunks = lang_data if isinstance(lang_data, list) else [lang_data]
         if not chunks:
@@ -726,12 +724,12 @@ if __name__ == '__main__':
     formatter('uptime calculation', age_time)
     print(f"   uptime text:           {age_data}")
 
-    # Always refresh Core.Lang from repository language stats (ALL languages by size)
+    # Always refresh Lang from repository language stats (ALL languages by size)
     lang_names, lang_time = perf_counter(languages_getter, USER_NAME)
     formatter('languages', lang_time)
     lang_chunks = pack_lang_chunks(lang_names)
-    print(f"   core.lang names:       {len(lang_names)} → {lang_names}")
-    print(f"   core.lang rows:        {lang_chunks}")
+    print(f"   lang names:       {len(lang_names)} → {lang_names}")
+    print(f"   lang rows:        {lang_chunks}")
 
     commit_data = star_data = repo_data = contrib_data = follower_data = None
     loc_slice = None
@@ -776,7 +774,7 @@ if __name__ == '__main__':
             total_loc[index] = '{:,}'.format(total_loc[index])
         loc_slice = total_loc[:-1]
     else:
-        print('   ACCESS_TOKEN not set — skipping stars/LOC/etc. (Core.Lang still updated)')
+        print('   ACCESS_TOKEN not set — skipping stars/LOC/etc. (Lang still updated)')
 
     # Rebuild SYSTEM.INFO structure so multi-line Core.Lang rows exist
     try:
