@@ -12,8 +12,5 @@
 
 ## Commits
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Patruxs/Patruxs/output/snake-dark.svg" />
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Patruxs/Patruxs/output/snake.svg" />
-  <img alt="Snake animation" src="https://raw.githubusercontent.com/Patruxs/Patruxs/output/snake.svg" />
-</picture>
+![Snake animation](./snake.svg#gh-light-mode-only)
+![Snake animation](./snake-dark.svg#gh-dark-mode-only)
