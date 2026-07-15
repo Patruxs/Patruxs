@@ -15,7 +15,10 @@ on:
     paths-ignore:
       - "snake.svg"
       - "snake-dark.svg"
+      - "dark.svg"
+      - "light.svg"
       - "README.md"
+      - "cache/**"
 
 jobs:
   generate:
