@@ -41,9 +41,9 @@ jobs:
         env:
           # Defaults to the repo owner (Patruxs)
           USER_NAME: ${{ github.repository_owner }}
-          # Optional: set repo secret ACCESS_TOKEN for full GitHub stats
-          # (commits, stars, LOC, followers). Without it, only Uptime is updated.
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          # Prefer a PAT in secrets.ACCESS_TOKEN (broader GraphQL access).
+          # Falls back to the job token so GitHub Stats can still update.
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN != '' && secrets.ACCESS_TOKEN || github.token }}
           # Optional: set repo variable BIRTHDAY as YYYY-MM-DD to pin a start date.
           # Without it, Uptime uses the GitHub account created_at date.
           BIRTHDAY: ${{ vars.BIRTHDAY }}

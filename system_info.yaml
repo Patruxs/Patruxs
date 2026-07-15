@@ -64,5 +64,6 @@ sections:
       - key: Grid.Github
         value: Patruxs
 
-  - title: Live Stats
-    note: See live GitHub stats badges below in README ↓
+  # Filled live by today.py (ids: repo_data, star_data, commit_data, …)
+  - title: GitHub Stats
+    kind: github_stats

@@ -34,6 +34,18 @@ ANIM_DUR = 0.38
 # Dot padding target: length of "Key: " + dots + " " + value ≈ this
 DOT_WIDTH = 50
 
+# Placeholder stats (overwritten by today.py when ACCESS_TOKEN is set)
+GH_PLACEHOLDERS = {
+    "repos": "0",
+    "contrib": "0",
+    "stars": "0",
+    "commits": "0",
+    "followers": "0",
+    "loc": "0",
+    "loc_add": "0",
+    "loc_del": "0",
+}
+
 
 def load_config(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
@@ -101,6 +113,9 @@ def _parse_simple_yaml(text: str) -> dict:
             continue
         if stripped.startswith("note:") and cur_section is not None and indent >= 2:
             cur_section["note"] = unquote(stripped.split(":", 1)[1])
+            continue
+        if stripped.startswith("kind:") and cur_section is not None and indent >= 2:
+            cur_section["kind"] = unquote(stripped.split(":", 1)[1])
             continue
         if stripped == "fields:" and cur_section is not None:
             mode = "section_fields"
@@ -189,6 +204,70 @@ def render_segments(kind: str, **kwargs) -> list:
     raise ValueError(f"unknown kind {kind}")
 
 
+def github_stats_rows(p: dict | None = None) -> list:
+    """
+    GitHub Stats block under Contact.
+    IDs match today.py: repo_data, contrib_data, star_data, commit_data,
+    follower_data, loc_data, loc_add, loc_del (+ *_dots where used).
+    """
+    p = {**GH_PLACEHOLDERS, **(p or {})}
+    rows = []
+    rows.append(render_segments("section", title="GitHub Stats"))
+    # . Repos: .... N {Contributed: M} | Stars: ........... S
+    rows.append(
+        [
+            ("cc", ". "),
+            ("key", "Repos"),
+            ("cc", ":"),
+            ("cc", " .... ", {"id": "repo_data_dots"}),
+            ("value", p["repos"], {"id": "repo_data"}),
+            ("cc", " {"),
+            ("key", "Contributed"),
+            ("cc", ": "),
+            ("value", p["contrib"], {"id": "contrib_data"}),
+            ("cc", "} | "),
+            ("key", "Stars"),
+            ("cc", ":"),
+            ("cc", " ........... ", {"id": "star_data_dots"}),
+            ("value", p["stars"], {"id": "star_data"}),
+        ]
+    )
+    # . Commits: ................. N | Followers: ....... M
+    rows.append(
+        [
+            ("cc", ". "),
+            ("key", "Commits"),
+            ("cc", ":"),
+            ("cc", " ................. ", {"id": "commit_data_dots"}),
+            ("value", p["commits"], {"id": "commit_data"}),
+            ("cc", " | "),
+            ("key", "Followers"),
+            ("cc", ":"),
+            ("cc", " ....... ", {"id": "follower_data_dots"}),
+            ("value", p["followers"], {"id": "follower_data"}),
+        ]
+    )
+    # . Lines of Code on GitHub:. N ( A++, D-- )
+    rows.append(
+        [
+            ("cc", ". "),
+            ("key", "Lines of Code on GitHub"),
+            ("cc", ":"),
+            ("cc", ". ", {"id": "loc_data_dots"}),
+            ("value", p["loc"], {"id": "loc_data"}),
+            ("cc", " ( "),
+            ("addColor", p["loc_add"], {"id": "loc_add"}),
+            ("addColor", "++"),
+            ("cc", ", "),
+            ("", " ", {"id": "loc_del_dots"}),
+            ("delColor", p["loc_del"], {"id": "loc_del"}),
+            ("delColor", "--"),
+            ("cc", " )"),
+        ]
+    )
+    return rows
+
+
 def build_rows(cfg: dict) -> list:
     rows: list = []
     rows.append(render_segments("head", host=cfg["host"]))
@@ -219,6 +298,12 @@ def build_rows(cfg: dict) -> list:
         # spacer before section (skip if previous row already empty)
         if not rows or rows[-1] != render_segments("empty"):
             rows.append(render_segments("empty"))
+
+        kind = (sec.get("kind") or "").strip()
+        if kind == "github_stats" or sec.get("title") == "GitHub Stats":
+            rows.extend(github_stats_rows())
+            continue
+
         rows.append(render_segments("section", title=sec["title"]))
         for item in sec.get("fields") or []:
             rows.append(
@@ -267,19 +352,101 @@ def build_info_groups(rows: list, text_fill: str) -> str:
             attrs = seg[2] if len(seg) > 2 else None
             t = escape(text)
             extra = _attrs_str(attrs)
+            class_attr = f' class="{cls}"' if cls else ""
             if first:
                 tspans.append(
-                    f'<tspan x="{INFO_X}" y="{y}" class="{cls}"{extra}>{t}</tspan>'
+                    f'<tspan x="{INFO_X}" y="{y}"{class_attr}{extra}>{t}</tspan>'
                 )
                 first = False
             else:
-                tspans.append(f'<tspan class="{cls}"{extra}>{t}</tspan>')
+                tspans.append(f"<tspan{class_attr}{extra}>{t}</tspan>")
         out.append(
             f'<g clip-path="url(#lc{i})">'
             f'<text x="{INFO_X}" y="0" fill="{text_fill}">{"".join(tspans)}</text>'
             f"</g>"
         )
     return "".join(out)
+
+
+def ensure_stats_styles(svg: str, path: Path) -> str:
+    """Ensure addColor / delColor CSS exists for LOC ++/--."""
+    if "addColor" in svg and "delColor" in svg:
+        return svg
+    is_dark = "dark" in path.name
+    add_fill = "#4ADE80" if is_dark else "#16A34A"
+    del_fill = "#F87171" if is_dark else "#DC2626"
+    block = (
+        f"    .addColor {{ font-family: 'Courier New', Consolas, monospace; "
+        f"font-size: 15px; fill: {add_fill}; font-weight: bold; }}\n"
+        f"    .delColor {{ font-family: 'Courier New', Consolas, monospace; "
+        f"font-size: 15px; fill: {del_fill}; font-weight: bold; }}\n"
+    )
+    svg2, n = re.subn(
+        r"(    \.cursor-blink \{[^}]+\}\n)",
+        block + r"\1",
+        svg,
+        count=1,
+    )
+    if n == 0:
+        svg2, n = re.subn(
+            r"(  </style>)",
+            block + r"\1",
+            svg,
+            count=1,
+        )
+    return svg2 if n else svg
+
+
+def expand_canvas_for_rows(svg: str, n: int) -> str:
+    """Grow banner/panel height if the SYSTEM.INFO block needs more vertical room."""
+    last_y = INFO_START_Y + (n - 1) * INFO_STEP
+    # padding under last line + bottom margin
+    needed_height = max(610, last_y + 50)
+    panel_h = needed_height - 30  # panels start at y=10, leave ~20 bottom
+    ascii_h = panel_h - 12
+
+    def repl_svg_open(m: re.Match) -> str:
+        tag = m.group(0)
+        tag = re.sub(r'\bheight="\d+"', f'height="{needed_height}"', tag)
+        tag = re.sub(
+            r'viewBox="0 0 (\d+) \d+"',
+            rf'viewBox="0 0 \1 {needed_height}"',
+            tag,
+        )
+        return tag
+
+    svg = re.sub(r"<svg\b[^>]*>", repl_svg_open, svg, count=1)
+    # full-bleed background rects
+    svg = re.sub(
+        r'(<rect width="1180" height=")\d+(" rx="18")',
+        rf"\g<1>{needed_height}\2",
+        svg,
+    )
+    # left/right glass panels
+    svg = re.sub(
+        r'(<rect x="14" y="10" width="567" height=")\d+"',
+        rf"\g<1>{panel_h}\"",
+        svg,
+    )
+    svg = re.sub(
+        r'(<rect x="599" y="10" width="567" height=")\d+"',
+        rf"\g<1>{panel_h}\"",
+        svg,
+    )
+    # ASCII clip rect inside left panel
+    svg = re.sub(
+        r'(<rect x="15" y="26" width="565" height=")\d+"',
+        rf"\g<1>{ascii_h}\"",
+        svg,
+    )
+    # reveal curtain target height
+    svg = re.sub(
+        r'(attributeName="height" from="0" to=")\d+(")',
+        rf"\g<1>{needed_height - 50}\2",
+        svg,
+        count=1,
+    )
+    return svg
 
 
 def detect_text_fill(svg: str) -> str:
@@ -296,10 +463,12 @@ def detect_text_fill(svg: str) -> str:
     return "#1E293B"
 
 
-def patch_svg(path: Path, rows: list[list[tuple[str, str]]]) -> None:
+def patch_svg(path: Path, rows: list) -> None:
     svg = path.read_text(encoding="utf-8")
     n = len(rows)
     text_fill = detect_text_fill(svg)
+    svg = ensure_stats_styles(svg, path)
+    svg = expand_canvas_for_rows(svg, n)
 
     # 1) Replace all lc* clipPaths
     clips = build_clippaths(n)
@@ -325,26 +494,35 @@ def patch_svg(path: Path, rows: list[list[tuple[str, str]]]) -> None:
     if n_groups == 0:
         raise RuntimeError(f"{path.name}: could not find SYSTEM.INFO <g clip-path=lc*> blocks")
 
-    # 3) Cursor timing: after last line finishes typing
+    # 3) Cursor position + timing after last line
     cursor_begin = ANIM_BEGIN0 + (n - 1) * ANIM_STEP + ANIM_DUR
-    svg4, n_cur = re.subn(
-        r'(class="cursor-blink"[^>]*>\s*<animate[^>]*begin=")[^"]+(")',
-        rf"\g<1>{cursor_begin:.2f}s\g<2>",
+    cursor_y = INFO_START_Y + (n - 1) * INFO_STEP - 8
+    svg4, n_cur_y = re.subn(
+        r'(<rect x="619" y=")\d+(" width="9" height="16" class="cursor-blink")',
+        rf"\g<1>{cursor_y}\2",
         svg3,
         count=1,
     )
+    if n_cur_y == 0:
+        svg4 = svg3
+
+    svg5, n_cur = re.subn(
+        r'(class="cursor-blink"[^>]*>\s*<animate[^>]*begin=")[^"]+(")',
+        rf"\g<1>{cursor_begin:.2f}s\g<2>",
+        svg4,
+        count=1,
+    )
     if n_cur == 0:
-        # alternate attribute order
-        svg4, n_cur = re.subn(
+        svg5, n_cur = re.subn(
             r'(<animate attributeName="opacity"[^>]*begin=")[^"]+(")',
             rf"\g<1>{cursor_begin:.2f}s\g<2>",
-            svg3,
+            svg4,
             count=1,
         )
 
-    path.write_text(svg4, encoding="utf-8")
+    path.write_text(svg5, encoding="utf-8")
     ET.parse(path)  # validate XML
-    print(f"  updated {path.name}  ({n} rows, cursor @{cursor_begin:.2f}s)")
+    print(f"  updated {path.name}  ({n} rows, cursor y={cursor_y} @{cursor_begin:.2f}s)")
 
 
 def main() -> int:
