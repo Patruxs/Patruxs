@@ -16,7 +16,6 @@
   <img src="./assets/animated-divider.gif" width="100%" alt="divider"/>
 </p>
 
-<!-- Single graph via <picture>: browser shows only the matching theme source -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=0d1117&color=58a6ff&line=8b949e&point=f7786b&area=true&hide_border=false"/>
