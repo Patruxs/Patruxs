@@ -16,8 +16,11 @@
   <img src="./assets/animated-divider.gif" width="100%" alt="divider"/>
 </p>
 
-<!-- One graph only: GitHub hides the other via #gh-*-mode-only -->
+<!-- Single graph via <picture>: browser shows only the matching theme source -->
 <p align="center">
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=0d1117&color=58a6ff&line=8b949e&point=f7786b&area=true&hide_border=false#gh-dark-mode-only" alt="GitHub Activity Graph" width="100%"/>
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=ffffff&color=0969da&line=57606a&point=cf222e&area=true&hide_border=false#gh-light-mode-only" alt="GitHub Activity Graph" width="100%"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=0d1117&color=58a6ff&line=8b949e&point=f7786b&area=true&hide_border=false"/>
+    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=ffffff&color=0969da&line=57606a&point=cf222e&area=true&hide_border=false"/>
+    <img src="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=0d1117&color=58a6ff&line=8b949e&point=f7786b&area=true&hide_border=false" alt="GitHub Activity Graph" width="100%"/>
+  </picture>
 </p>
