@@ -449,6 +449,51 @@ def ensure_stats_styles(svg: str, path: Path) -> str:
     return svg2 if n else svg
 
 
+def strip_panel_borders(svg: str) -> str:
+    """
+    Remove VISUAL.MAP / SYSTEM.INFO glass cards and outer frame stroke.
+    Called on every regenerate so borders do not come back.
+    """
+    # Glass panel backgrounds (with or without stroke)
+    svg, _ = re.subn(
+        r'\n  <rect x="14" y="10" width="567" height="\d+" rx="14"[^/]*/>'
+        r'\n  <rect x="599" y="10" width="567" height="\d+" rx="14"[^/]*/>',
+        '',
+        svg,
+        count=1,
+    )
+    svg, _ = re.subn(
+        r'\n  <rect x="14" y="10" width="567" height="\d+" rx="14"[^/]*/>',
+        '',
+        svg,
+        count=1,
+    )
+    svg, _ = re.subn(
+        r'\n  <rect x="599" y="10" width="567" height="\d+" rx="14"[^/]*/>',
+        '',
+        svg,
+        count=1,
+    )
+    # Outer animated frame (not the titlebar bar height=34)
+    svg, _ = re.subn(
+        r'\n?<rect x="3" y="3" width="1174" height="604"[^>]*>\s*'
+        r'(?:<animate[^/]*/>\s*)?</rect>\s*',
+        '\n',
+        svg,
+        count=1,
+        flags=re.DOTALL,
+    )
+    svg = re.sub(r' stroke="url\(#borderGrad\)" stroke-width="[^"]*"', '', svg)
+    svg, _ = re.subn(
+        r'\n  <linearGradient id="borderGrad"[^>]*>.*?</linearGradient>',
+        '',
+        svg,
+        count=1,
+        flags=re.DOTALL,
+    )
+    return svg
+
+
 def expand_canvas_for_rows(svg: str, n: int) -> str:
     """Grow banner/panel height if the SYSTEM.INFO block needs more vertical room."""
     last_y = INFO_START_Y + (n - 1) * INFO_STEP
@@ -532,6 +577,7 @@ def patch_svg(path: Path, rows: list) -> None:
     n = len(rows)
     text_fill = detect_text_fill(svg)
     svg = ensure_stats_styles(svg, path)
+    svg = strip_panel_borders(svg)
     svg = expand_canvas_for_rows(svg, n)
 
     # 1) Replace all lc* clipPaths

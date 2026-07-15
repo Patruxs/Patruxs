@@ -8,11 +8,6 @@
       <animate attributeName="stop-color" values="#4F46E5;#0EA5E9;#0284C7;#4F46E5" dur="9s" repeatCount="indefinite"/>
     </stop>
   </linearGradient>
-  <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" stop-color="#4F46E5"/>
-    <stop offset="50%" stop-color="#0EA5E9"/>
-    <stop offset="100%" stop-color="#059669"/>
-  </linearGradient>
   <radialGradient id="bgGlow" cx="30%" cy="20%" r="80%">
     <stop offset="0%" stop-color="#F8FAFC"/>
     <stop offset="100%" stop-color="#E2E8F0"/>
@@ -71,8 +66,6 @@
 </g>
 
 <g transform="translate(0,38)">
-  <rect x="14" y="10" width="567" height="590" rx="14" fill="#FFFFFF" fill-opacity="0.75" stroke="url(#borderGrad)" stroke-width="1" opacity="0.9"/>
-  <rect x="599" y="10" width="567" height="590" rx="14" fill="#FFFFFF" fill-opacity="0.75" stroke="url(#borderGrad)" stroke-width="1" opacity="0.9"/>
   <text x="30" y="28" class="panel-title">VISUAL.MAP</text>
   <text x="615" y="28" class="panel-title">SYSTEM.INFO</text>
 
@@ -133,7 +126,4 @@
   <animateTransform attributeName="transform" type="translate" from="0 -70" to="0 680" dur="4.2s" repeatCount="indefinite"/>
 </rect>
 
-<rect x="3" y="3" width="1174" height="604" rx="16" fill="none" stroke="url(#borderGrad)" stroke-width="2" opacity="0.8">
-  <animate attributeName="opacity" values="0.5;0.95;0.5" dur="3.2s" repeatCount="indefinite"/>
-</rect>
 </svg>
