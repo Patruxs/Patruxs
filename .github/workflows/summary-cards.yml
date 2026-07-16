@@ -22,6 +22,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Generate cards (github_dark)
         uses: vn7n24fzkq/github-profile-summary-cards@release
@@ -97,7 +99,7 @@ jobs:
           git commit -m "chore: update profile summary cards [skip ci]"
 
           for i in 1 2 3; do
-            if git pull --rebase origin main && git push; then
+            if git pull --rebase origin main && git push origin HEAD:main; then
               exit 0
             fi
             echo "Push attempt $i failed; retrying..."
