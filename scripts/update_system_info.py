@@ -37,7 +37,8 @@ ANIM_BEGIN0 = 0.75
 ANIM_STEP = 0.115
 ANIM_DUR = 0.38
 # Total monospaced width of a simple ". Key: ... value" row (right-align values)
-LINE_WIDTH = 54
+LINE_WIDTH = 60
+RULE_WIDTH = 63
 # Kept for callers that still pass DOT_WIDTH-style budgets
 DOT_WIDTH = 50
 
@@ -162,18 +163,22 @@ def pad_dots(key: str, value: str, width: int = LINE_WIDTH) -> str:
 Seg = tuple  # (str, str) or (str, str, dict)
 
 
+def pad_rule(label: str) -> str:
+    """Fill a rule so its label and dashes occupy RULE_WIDTH columns."""
+    return " " + "-" * max(1, RULE_WIDTH - len(label) - 1)
+
+
 def render_segments(kind: str, **kwargs) -> list:
     """Return list of (css_class, text[, attrs]) for one row."""
     if kind == "head":
         host = kwargs["host"]
-        dash = " -" + "—" * 42 + "-—-"
-        return [("head", host), ("cc", dash)]
+        return [("head", host), ("cc", pad_rule(host))]
     if kind == "empty":
         return [("cc", ". ")]
     if kind == "section":
         title = kwargs["title"]
-        dash = " -" + "—" * 44 + "-—-"
-        return [("accent", f"- {title}"), ("cc", dash)]
+        title_text = f"- {title}"
+        return [("accent", title_text), ("cc", pad_rule(title_text))]
     if kind == "note":
         return [("cc", ". "), ("value", kwargs["text"])]
     if kind == "kv":
@@ -244,6 +249,30 @@ def justify_dots(value: str, length: int) -> str:
     return " " + ("." * just_len) + " "
 
 
+def fit_row_to_width(row: list, dots_id: str, width: int = LINE_WIDTH) -> list:
+    """Resize one dotted segment so the complete row reaches width."""
+    target_index = next(
+        index
+        for index, segment in enumerate(row)
+        if len(segment) == 3 and segment[2].get("id") == dots_id
+    )
+    fixed_width = sum(
+        len(segment[1]) for index, segment in enumerate(row) if index != target_index
+    )
+    room = max(0, width - fixed_width)
+    if room == 0:
+        filler = ""
+    elif room == 1:
+        filler = " "
+    elif room == 2:
+        filler = ". "
+    else:
+        filler = " " + "." * (room - 2) + " "
+    css_class, _, attrs = row[target_index]
+    row[target_index] = (css_class, filler, attrs)
+    return row
+
+
 def github_stats_rows(p: dict | None = None) -> list:
     """
     GitHub Stats block under Contact.
@@ -276,6 +305,7 @@ def github_stats_rows(p: dict | None = None) -> list:
             ("value", p["stars"], {"id": "star_data"}),
         ]
     )
+    fit_row_to_width(rows[-1], "star_data_dots")
 
     # . Commits: ................. N | Followers: ....... M
     rows.append(
@@ -292,6 +322,7 @@ def github_stats_rows(p: dict | None = None) -> list:
             ("value", p["followers"], {"id": "follower_data"}),
         ]
     )
+    fit_row_to_width(rows[-1], "follower_data_dots")
 
     # . Lines of Code on GitHub: . N ( A++, D-- )
     rows.append(
@@ -311,6 +342,7 @@ def github_stats_rows(p: dict | None = None) -> list:
             ("cc", " )"),
         ]
     )
+    fit_row_to_width(rows[-1], "loc_del_dots")
     return rows
 
 
@@ -329,7 +361,7 @@ def lang_rows(chunks: list[str] | None) -> list:
         LANG_FIRST_PREFIX = 8  # len(". Lang: ")
 
         def lang_dots_for(value: str, prefix_len: int = 8) -> str:
-            return "." * max(0, 54 - prefix_len - len(value))
+            return "." * max(0, LINE_WIDTH - prefix_len - len(value))
 
     text = chunks[0]
     return [
