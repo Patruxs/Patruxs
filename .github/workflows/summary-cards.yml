@@ -76,9 +76,14 @@ jobs:
 
           for path in Path("assets/profile-summary-card-output").rglob("README.md"):
               content = re.sub(
+                  r"(https://raw\.githubusercontent\.com/[^/\s)]+/[^/\s)]+/)[^\s)]+/profile-summary-card-output/",
+                  r"\1main/assets/profile-summary-card-output/",
+                  path.read_text(),
+              )
+              content = re.sub(
                   r"(?<!/assets)/profile-summary-card-output/",
                   "/assets/profile-summary-card-output/",
-                  path.read_text(),
+                  content,
               )
               path.write_text("\n".join(line.rstrip() for line in content.splitlines()).rstrip() + "\n")
           PY
