@@ -29,15 +29,15 @@ SVG_TARGETS = [
     os.path.join(ROOT, 'assets', 'light.svg'),
 ]
 # Dot budget for the age/uptime value column
-# Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value
-# => AGE_JUSTIFY_LEN + 11 == 54 => 43
-AGE_JUSTIFY_LEN = 43
+# Full row monospaced width is 60: ". Uptime:" (9) + " " + dots + " " + value
+# => AGE_JUSTIFY_LEN + 11 == 60 => 49
+AGE_JUSTIFY_LEN = 49
 # Lang — single right-justified line (by code size across owned non-fork repos)
 #   . Lang: .......... TypeScript · Java · HTML · CSS +12
 #
-LINE_WIDTH = 54
+LINE_WIDTH = 60
 LANG_FIRST_PREFIX = 8  # len(". Lang: ")
-LANG_VALUE_BUDGET = LINE_WIDTH - LANG_FIRST_PREFIX  # 46
+LANG_VALUE_BUDGET = LINE_WIDTH - LANG_FIRST_PREFIX  # 52
 LANG_TOP_N = 4  # show the N most-used languages
 LANG_MAX_N = 50  # max languages counted for "+N"
 LANG_SEP = " · "
@@ -531,8 +531,36 @@ def svg_overwrite(
         justify_format(root, 'loc_data', loc_data[2], 9)
         justify_format(root, 'loc_add', loc_data[0])
         justify_format(root, 'loc_del', loc_data[1], 7)
+    fit_svg_row(root, 'star_data_dots')
+    fit_svg_row(root, 'follower_data_dots')
+    fit_svg_row(root, 'loc_del_dots')
     # Keep SVG without XML declaration so GitHub raw/README embedding stays clean
     tree.write(filename, encoding='utf-8', xml_declaration=False)
+
+
+def fit_svg_row(root, dots_id, width=LINE_WIDTH):
+    """Resize one dotted tspan so its complete text row reaches width."""
+    for element in root.iter():
+        if not str(element.tag).endswith('text'):
+            continue
+        spans = list(element)
+        target = next((span for span in spans if span.get('id') == dots_id), None)
+        if target is None:
+            continue
+        fixed_width = sum(
+            len(span.text or '') for span in spans if span is not target
+        )
+        room = max(0, width - fixed_width)
+        if room == 0:
+            target.text = ''
+        elif room == 1:
+            target.text = ' '
+        elif room == 2:
+            target.text = '. '
+        else:
+            target.text = ' ' + ('.' * (room - 2)) + ' '
+        return True
+    return False
 
 
 def justify_format(root, element_id, new_text, length=0):
