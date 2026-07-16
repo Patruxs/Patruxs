@@ -69,12 +69,14 @@ jobs:
           rm -rf profile-summary-card-output
 
           python - <<'PY'
+          import re
           from pathlib import Path
 
           for path in Path("assets/profile-summary-card-output").rglob("README.md"):
-              content = path.read_text().replace(
-                  "/main/profile-summary-card-output/",
-                  "/main/assets/profile-summary-card-output/",
+              content = re.sub(
+                  r"(?<!/assets)/profile-summary-card-output/",
+                  "/assets/profile-summary-card-output/",
+                  path.read_text(),
               )
               path.write_text("\n".join(line.rstrip() for line in content.splitlines()).rstrip() + "\n")
           PY
