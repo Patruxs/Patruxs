@@ -1,6 +1,6 @@
 name: Profile summary cards
 
-# Regenerates static cards into profile-summary-card-output/
+# Regenerates static cards into assets/profile-summary-card-output/
 # so the README does not depend on the shared Vercel API
 # (which rate-limits and shows ERROR!!! on GitHub Camo).
 
@@ -22,6 +22,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Generate cards (github_dark)
         uses: vn7n24fzkq/github-profile-summary-cards@release
@@ -31,7 +33,19 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           BRANCH_NAME: main
           THEME: github_dark
-          AUTO_PUSH: true
+          AUTO_PUSH: false
+
+      - name: Preserve dark cards
+        run: |
+          set -euo pipefail
+
+          for file in 0-profile-details.svg 1-repos-per-language.svg 2-most-commit-language.svg 3-stats.svg 4-productive-time.svg README.md; do
+            test -f "profile-summary-card-output/github_dark/$file"
+          done
+
+          mkdir -p assets/profile-summary-card-output
+          rm -rf assets/profile-summary-card-output/github_dark
+          mv profile-summary-card-output/github_dark assets/profile-summary-card-output/github_dark
 
       - name: Generate cards (github)
         uses: vn7n24fzkq/github-profile-summary-cards@release
@@ -41,4 +55,60 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           BRANCH_NAME: main
           THEME: github
-          AUTO_PUSH: true
+          AUTO_PUSH: false
+
+      - name: Preserve light cards
+        run: |
+          set -euo pipefail
+
+          for file in 0-profile-details.svg 1-repos-per-language.svg 2-most-commit-language.svg 3-stats.svg 4-productive-time.svg README.md; do
+            test -f "profile-summary-card-output/github/$file"
+          done
+
+          rm -rf assets/profile-summary-card-output/github
+          mv profile-summary-card-output/github assets/profile-summary-card-output/github
+          mv profile-summary-card-output/README.md assets/profile-summary-card-output/README.md
+          rm -rf profile-summary-card-output
+
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          for path in Path("assets/profile-summary-card-output").rglob("README.md"):
+              content = re.sub(
+                  r"(https://raw\.githubusercontent\.com/[^/\s)]+/[^/\s)]+/)[^\s)]+/profile-summary-card-output/",
+                  r"\1main/assets/profile-summary-card-output/",
+                  path.read_text(),
+              )
+              content = re.sub(
+                  r"(?<!/assets)/profile-summary-card-output/",
+                  "/assets/profile-summary-card-output/",
+                  content,
+              )
+              path.write_text("\n".join(line.rstrip() for line in content.splitlines()).rstrip() + "\n")
+          PY
+
+      - name: Commit and push card updates
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/profile-summary-card-output
+
+          if git diff --staged --quiet; then
+            echo "No summary card changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update profile summary cards [skip ci]"
+
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push attempt $i failed; retrying..."
+            sleep 5
+          done
+          echo "Failed to push after retries"
+          exit 1

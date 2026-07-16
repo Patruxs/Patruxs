@@ -2,7 +2,7 @@
 
 | Script | Purpose |
 |--------|---------|
-| `today.py` | Live refresh: Uptime, Lang, GitHub Stats → `dark.svg` / `light.svg` |
+| `today.py` | Live refresh: Uptime, Lang, GitHub Stats -> `assets/dark.svg` / `assets/light.svg` |
 | `update_system_info.py` | Apply `system_info.yaml` structure + light live fill |
 | `ascii_to_svg.py` | `assets/portrait.txt` → SVG tspans |
 | `image_to_ascii.py` | Photo → ASCII portrait |
