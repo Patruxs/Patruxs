@@ -35,6 +35,12 @@ jobs:
 
       - name: Preserve dark cards
         run: |
+          set -euo pipefail
+
+          for file in 0-profile-details.svg 1-repos-per-language.svg 2-most-commit-language.svg 3-stats.svg 4-productive-time.svg README.md; do
+            test -f "profile-summary-card-output/github_dark/$file"
+          done
+
           mkdir -p assets/profile-summary-card-output
           rm -rf assets/profile-summary-card-output/github_dark
           mv profile-summary-card-output/github_dark assets/profile-summary-card-output/github_dark
@@ -51,10 +57,27 @@ jobs:
 
       - name: Preserve light cards
         run: |
+          set -euo pipefail
+
+          for file in 0-profile-details.svg 1-repos-per-language.svg 2-most-commit-language.svg 3-stats.svg 4-productive-time.svg README.md; do
+            test -f "profile-summary-card-output/github/$file"
+          done
+
           rm -rf assets/profile-summary-card-output/github
           mv profile-summary-card-output/github assets/profile-summary-card-output/github
           mv profile-summary-card-output/README.md assets/profile-summary-card-output/README.md
           rm -rf profile-summary-card-output
+
+          python - <<'PY'
+          from pathlib import Path
+
+          for path in Path("assets/profile-summary-card-output").rglob("README.md"):
+              content = path.read_text().replace(
+                  "/main/profile-summary-card-output/",
+                  "/main/assets/profile-summary-card-output/",
+              )
+              path.write_text("\n".join(line.rstrip() for line in content.splitlines()).rstrip() + "\n")
+          PY
 
       - name: Commit and push card updates
         run: |
