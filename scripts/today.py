@@ -509,7 +509,7 @@ def svg_overwrite(
     """
     tree = etree.parse(filename)
     root = tree.getroot()
-    # Uptime line in dark.svg / light.svg (ids: age_data, age_data_dots)
+    # Uptime line in assets/dark.svg and assets/light.svg (ids: age_data, age_data_dots)
     justify_format(root, 'age_data', age_data, AGE_JUSTIFY_LEN)
     # Lang: single right-justified line (ids: lang_data, lang_data_dots)
     if lang_data is not None:
@@ -679,7 +679,7 @@ def resolve_start_date():
 if __name__ == '__main__':
     """
     Based on Andrew Grant (Andrew6rant), 2022-2025
-    Adapted for Patruxs profile banners (dark.svg / light.svg).
+    Adapted for Patruxs profile banners (assets/dark.svg and assets/light.svg).
     """
     print('Calculation times:')
     start_date, start_time = perf_counter(resolve_start_date)

@@ -19,7 +19,10 @@ Patruxs/
 │
 ├── assets/
 │   ├── dark.svg / light.svg       # Theme banners (VISUAL.MAP + SYSTEM.INFO)
-│   └── portrait.txt               # ASCII portrait source for VISUAL.MAP
+│   ├── portrait.txt               # ASCII portrait source for VISUAL.MAP
+│   └── profile-summary-card-output/
+│       ├── github/                 # Light profile summary cards
+│       └── github_dark/            # Dark profile summary cards
 │
 ├── scripts/
 │   ├── today.py                   # Live refresh: Uptime, Lang, GitHub Stats
@@ -33,6 +36,7 @@ Patruxs/
 │
 └── .github/workflows/
     ├── update-banners.yml         # Daily live-field refresh
+    ├── summary-cards.yml          # Daily light/dark summary cards
     └── snake.yml                  # Contribution snake every 12h
 ```
 
@@ -266,9 +270,10 @@ Referenced from `README.md`:
 | Workflow | File | Schedule | What it does |
 |----------|------|----------|--------------|
 | **Update profile banners** | `update-banners.yml` | Daily 00:00 UTC | Runs `scripts/today.py`, commits SVG changes |
+| **Profile summary cards** | `summary-cards.yml` | Daily 00:30 UTC | Regenerates both themes under `assets/profile-summary-card-output/` and publishes them to `main` |
 | **Generate snake animation** | `snake.yml` | Every 12 hours | Platane/snk → `snake.svg` / `snake-dark.svg` |
 
-Both support **workflow_dispatch** (manual run from the Actions tab).
+All three support **workflow_dispatch** (manual run from the Actions tab).
 
 ### Secrets and variables
 
