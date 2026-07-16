@@ -12,13 +12,13 @@ Run every command from the **repo root** unless noted.
 ```text
 Patruxs/
 ├── README.md                      # What GitHub shows on your profile
-├── dark.svg / light.svg           # Theme banners (VISUAL.MAP + SYSTEM.INFO)
 ├── snake.svg / snake-dark.svg     # Contribution snake
 ├── system_info.yaml               # Static SYSTEM.INFO text (edit this)
 ├── requirements.txt
 ├── .gitignore
 │
 ├── assets/
+│   ├── dark.svg / light.svg       # Theme banners (VISUAL.MAP + SYSTEM.INFO)
 │   └── portrait.txt               # ASCII portrait source for VISUAL.MAP
 │
 ├── scripts/
@@ -36,8 +36,8 @@ Patruxs/
     └── snake.yml                  # Contribution snake every 12h
 ```
 
-Profile assets stay at the **root** so `README.md` can use simple relative paths
-like `./dark.svg`.
+Profile assets stay under `assets/` and use paths relative to `README.md`, such
+as `./assets/dark.svg`.
 
 ---
 
@@ -58,10 +58,10 @@ export ACCESS_TOKEN=ghp_...          # optional, recommended for stats
 python3 scripts/today.py
 
 # 4. Preview
-#    open dark.svg and light.svg in a browser
+#    open assets/dark.svg and assets/light.svg in a browser
 
 # 5. Publish
-git add system_info.yaml dark.svg light.svg
+git add system_info.yaml assets/dark.svg assets/light.svg
 git commit -m "Update profile banner"
 git push
 ```
@@ -223,7 +223,7 @@ python3 scripts/ascii_to_svg.py
 # → assets/portrait_tspan.txt
 ```
 
-3. Paste/update the portrait `<tspan>` block inside `dark.svg` and `light.svg`
+3. Paste/update the portrait `<tspan>` block inside `assets/dark.svg` and `assets/light.svg`
    (or have an agent do it). `update_system_info.py` does **not** rewrite VISUAL.MAP.
 
 ### From a photo
@@ -297,8 +297,10 @@ Suggested PAT scopes (see comments in `scripts/today.py`):
 Keep `README.md` at the root. Minimal pattern:
 
 ```markdown
-![Patruxs](./dark.svg#gh-dark-mode-only)
-![Patruxs](./light.svg#gh-light-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
+  <img src="./assets/light.svg" alt="Patruxs"/>
+</picture>
 
 ## My stats:
 ...

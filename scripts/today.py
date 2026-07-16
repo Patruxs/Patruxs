@@ -25,8 +25,8 @@ USER_NAME = os.environ.get('USER_NAME', 'Patruxs')
 ACCESS_TOKEN = os.environ.get('ACCESS_TOKEN', '')
 HEADERS = {'authorization': 'token ' + ACCESS_TOKEN} if ACCESS_TOKEN else {}
 SVG_TARGETS = [
-    os.path.join(ROOT, 'dark.svg'),
-    os.path.join(ROOT, 'light.svg'),
+    os.path.join(ROOT, 'assets', 'dark.svg'),
+    os.path.join(ROOT, 'assets', 'light.svg'),
 ]
 # Dot budget for the age/uptime value column
 # Full row monospaced width is 54: ". Uptime:" (9) + " " + dots + " " + value

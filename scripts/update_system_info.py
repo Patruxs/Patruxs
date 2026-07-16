@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Update SYSTEM.INFO in dark.svg and light.svg from system_info.yaml.
+Update SYSTEM.INFO in assets/dark.svg and assets/light.svg from system_info.yaml.
 
 Usage (from repo root):
   1. Edit system_info.yaml
   2. Run:  python3 scripts/update_system_info.py
-  3. Open dark.svg / light.svg to preview
+  3. Open assets/dark.svg / assets/light.svg to preview
 
 Requires: PyYAML  (pip install pyyaml)  — falls back to a tiny YAML subset parser.
 """
@@ -24,7 +24,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 CONFIG = ROOT / "system_info.yaml"
-TARGETS = [ROOT / "dark.svg", ROOT / "light.svg"]
+TARGETS = [ROOT / "assets" / "dark.svg", ROOT / "assets" / "light.svg"]
 
 # Layout constants (must match banner geometry)
 INFO_X = 617  # text x inside SYSTEM.INFO panel
@@ -721,7 +721,7 @@ def main() -> int:
         except Exception as exc:
             print(f"Note: live field fill failed ({exc})")
 
-    print("Done. Open dark.svg / light.svg to preview.")
+    print("Done. Open assets/dark.svg / assets/light.svg to preview.")
     return 0
 
 
