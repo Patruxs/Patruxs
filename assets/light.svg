@@ -34,7 +34,7 @@
   <clipPath id="asciiPanelClip"><rect x="15" y="26" width="565" height="462" rx="10"/></clipPath>
   <clipPath id="lc0"><rect x="595" y="26.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="0.75s" fill="freeze"/></rect></clipPath><clipPath id="lc1"><rect x="595" y="48.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="0.86s" fill="freeze"/></rect></clipPath><clipPath id="lc2"><rect x="595" y="70.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="0.98s" fill="freeze"/></rect></clipPath><clipPath id="lc3"><rect x="595" y="92.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.09s" fill="freeze"/></rect></clipPath><clipPath id="lc4"><rect x="595" y="114.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.21s" fill="freeze"/></rect></clipPath><clipPath id="lc5"><rect x="595" y="136.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.33s" fill="freeze"/></rect></clipPath><clipPath id="lc6"><rect x="595" y="158.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.44s" fill="freeze"/></rect></clipPath><clipPath id="lc7"><rect x="595" y="180.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.56s" fill="freeze"/></rect></clipPath><clipPath id="lc8"><rect x="595" y="202.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.67s" fill="freeze"/></rect></clipPath><clipPath id="lc9"><rect x="595" y="224.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.79s" fill="freeze"/></rect></clipPath><clipPath id="lc10"><rect x="595" y="246.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="1.90s" fill="freeze"/></rect></clipPath><clipPath id="lc11"><rect x="595" y="268.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.02s" fill="freeze"/></rect></clipPath><clipPath id="lc12"><rect x="595" y="290.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.13s" fill="freeze"/></rect></clipPath><clipPath id="lc13"><rect x="595" y="312.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.25s" fill="freeze"/></rect></clipPath><clipPath id="lc14"><rect x="595" y="334.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.36s" fill="freeze"/></rect></clipPath><clipPath id="lc15"><rect x="595" y="356.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.48s" fill="freeze"/></rect></clipPath><clipPath id="lc16"><rect x="595" y="378.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.59s" fill="freeze"/></rect></clipPath><clipPath id="lc17"><rect x="595" y="400.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.71s" fill="freeze"/></rect></clipPath><clipPath id="lc18"><rect x="595" y="422.00" width="0" height="24"><animate attributeName="width" from="0" to="583" dur="0.38s" begin="2.82s" fill="freeze"/></rect></clipPath>
   <style>
-    .ascii  { font-family: 'Courier New', Consolas, monospace; font-size: 11.4px; fill: url(#asciiGrad); }
+    .ascii  { font-family: 'Courier New', Consolas, monospace; font-size: 7.0px; fill: url(#asciiGrad); }
     .key    { font-family: 'Courier New', Consolas, monospace; font-size: 15px; fill: #0284C7; font-weight: bold; }
     .value  { font-family: 'Courier New', Consolas, monospace; font-size: 15px; fill: #1E293B; }
     .cc     { font-family: 'Courier New', Consolas, monospace; font-size: 15px; fill: #94A3B8; }
@@ -70,47 +70,73 @@
 
   <g clip-path="url(#asciiPanelClip)" mask="url(#revealMask)">
   <text x="17" y="0" class="ascii">
-<tspan x="17" y="42.00" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">::::::::....::%%%%%%%%%%%%#..........:..:::::::::::----:--------:-------</tspan>
-<tspan x="17" y="51.90" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">::::::....:@@@@@@%##%%%%@@@%#%%#.......:.::::::::::::::-------::::------</tspan>
-<tspan x="17" y="61.80" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:::::.:..%@@@@%%###%%@@@@%@@@@@@@%......:::::::::::::-::-------::------:</tspan>
-<tspan x="17" y="71.70" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:..::..#%@@@%%@@@@@%%@%##%@@@@@%##%#:....::::::::::::::-:-----::-:------</tspan>
-<tspan x="17" y="81.60" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:::..:#%@%%@@@@@%##*++++*#%@%@%##%%%%.....:::::::::::-:---:---::--::----</tspan>
-<tspan x="17" y="91.50" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:....:%@%#@@#*++####**++*#+*#####%@@@%...:::::::::::::-:::--:-::::--::--</tspan>
-<tspan x="17" y="101.40" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:....%%%#%%*+##***-**+--++*#+#@@@@@@@%.....:::::::::::::-:::--:::-::-::-</tspan>
-<tspan x="17" y="111.30" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:....%@##@#+#=------++=+:=+*#+*####%@%.....:::::::::::--:--:---::--:----</tspan>
-<tspan x="17" y="121.20" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:.....@%#%*+##--------*++++-**###++*@:....::.::::::::::-:-----:::::-----</tspan>
-<tspan x="17" y="131.10" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">......%@%%*#*---*##*****#+#*--=+*++*#%.::....::::::::::::-----::::------</tspan>
-<tspan x="17" y="141.00" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.......%+#*##****#+*#%%#*+##*##++###*#+*::...::::::::::::---:-:::::--::-</tspan>
-<tspan x="17" y="150.90" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">........*%@%%%#++**%%%%%##@@#**+##*#*:#+...::..::::::::::::-:-:::::::-::</tspan>
-<tspan x="17" y="160.80" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">........##%#%%%@%#@**%**##*#*++**#+#++=#.:..::.:::::::::::-:::::::::::-:</tspan>
-<tspan x="17" y="170.70" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.......%%*##*#%%%*##*#++#*+#=-+*#++#####.:::..:::::::::::::--::--:::::-:</tspan>
-<tspan x="17" y="180.60" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">........*+**+#*%#*=+*+#++*#+.+*#+++#*##.:..:::::::::::::::::-:::::::::-:</tspan>
-<tspan x="17" y="190.50" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">..........**+*#%**+*-*-**++=+*##=#=+#.:::::..::::::::::::::::::::::::::-</tspan>
-<tspan x="17" y="200.40" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...........*##*%*+##==-#*+.:+*###=#*..:::.::::::::::::::::::--::::::::::</tspan>
-<tspan x="17" y="210.30" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...........**+*#%%*#**+::+::=+*-===#::.....:::::::::::::::::::::::::::::</tspan>
-<tspan x="17" y="220.20" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">............*#*+**#+*****+++++**#++#..:......::.::::::::::::::::::::::::</tspan>
-<tspan x="17" y="230.10" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.............*###%%#*+*+##*****#+*##*......:::.::::::::::::::--:::::::::</tspan>
-<tspan x="17" y="240.00" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">..............*#*%%**+###*-*##+**#+*+%:......:::::::::::::::::::::::::::</tspan>
-<tspan x="17" y="249.90" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...............*##*+#**::+*#+**#*++*#%%#...........:::.:::::::::::::::::</tspan>
-<tspan x="17" y="259.80" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.................***##**##+**+#*+++#%@@@@:..........:::.::::::::::::::::</tspan>
-<tspan x="17" y="269.70" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...................*###*+=##**+++**@@@@%@@#........::.::::::::.:::::::::</tspan>
-<tspan x="17" y="279.60" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...................*%+*+#==--**##@@@%@#%@@@%.........::.::::::::::-::::-</tspan>
-<tspan x="17" y="289.50" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...................@@#*#+#**#*#%%@%%%##%%%#%%%%#......::::::::::::--:::-</tspan>
-<tspan x="17" y="299.40" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.................#%@@@%#*++#%###%%#%#######%@@@@@@%:::::::::::::::-:::::</tspan>
-<tspan x="17" y="309.30" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">..............#%%##%@@@%*%%#*##%%#%########@@@@@@@@@@@%%:::::::::::-::::</tspan>
-<tspan x="17" y="319.20" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">..........:#@@@%%#%@@@%%@@@######%%########@@@@@@@@@@@@@@@@%:::.::::::::</tspan>
-<tspan x="17" y="329.10" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">......:%%@@@@%%@@%@@@@%@%@@@%####%%%###%#%%@@@@@@@@@@@@@@@@%%%##..::::::</tspan>
-<tspan x="17" y="339.00" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.....#%@@@@@@@@@%@@@@@#*#%@@@@#%%##%%%%%%%%#@@@@@@@@@@@@%%%%%%#%%#::::::</tspan>
-<tspan x="17" y="348.90" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">....%%%@@@@%@@@%@%@@@%%@@%%@%%@%##%%#%%%%%#%@@@@@@@@@%%%%##%@@@@%%::::::</tspan>
-<tspan x="17" y="358.80" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...#@@@@@@%%@@%%@@@@%@@%#####@%#*#%%%%%%##@@@@@@@@@@##%####%%%@@@%%:::::</tspan>
-<tspan x="17" y="368.70" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">...%@@@@%@@%@%#@@@@@#*######%@#**#######%@@@%@@@%%%##@###%%%%##@@@@%::::</tspan>
-<tspan x="17" y="378.60" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">..:@@@@@@@@@@%%@%#%@*##%###%@%*#*######%@@@@%%%%%###@%##%@@@@@%#%%%@:.::</tspan>
-<tspan x="17" y="388.50" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:..%@@%%@%%@@#@%##%#*###*##@@#########%@@%%%%%%%##%%@%#%%%%%@@@@%#%@%:.:</tspan>
-<tspan x="17" y="398.40" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:::%@%%%@@@@%%@%##%***%#*#%@####%%%##%@@%%%%%%%##%@@@%%%%%%%%%%%@%%%#::.</tspan>
-<tspan x="17" y="408.30" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:::@@%%@@@@@#@%##%%***%##%@####%%%##%@@@@%%%%%%##%@@%%%%%%%%%##%%@@%%.::</tspan>
-<tspan x="17" y="418.20" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:::@@@@@@@@%%@%##@####%%#%%##%%%%##%%@%%%%%%#%%#%@@@%%#%%%%%%%###%@@%%:.</tspan>
-<tspan x="17" y="428.10" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">::#@@@@@@@@#@%%%%@#%%%%##@#%%%%%%#%@%%%%%%%%#%%#%@@%%##%%%%%%#%%##@@@@::</tspan>
-<tspan x="17" y="438.00" textLength="561" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-:%@@@@@@@@#@%%#%@%%@@%#@##%%%%%%%@%%###%%%%%%%%@@@@%###%%@%%%#%%#%@@@::</tspan>
+<tspan x="70" y="38.00" xml:space="preserve">                     π ππ≈÷---------×÷∞π</tspan>
+<tspan x="70" y="44.25" xml:space="preserve">                ππππ∞=×-+--------------×∞π  ππ</tspan>
+<tspan x="70" y="50.50" xml:space="preserve">                π≈×+++++++---------++++--÷÷÷÷≠∞ππ</tspan>
+<tspan x="70" y="56.75" xml:space="preserve">             ππ√×++++----×××---+++-++++++++++++-=ππ</tspan>
+<tspan x="70" y="63.00" xml:space="preserve">          ππ π≠-++++++++--+----++++--×+++++++++++-≠πππ</tspan>
+<tspan x="70" y="69.25" xml:space="preserve">            √÷-+++----+++++++--+-+××--++++++++-××--×≠π</tspan>
+<tspan x="70" y="75.50" xml:space="preserve">          π∞×-++---+++++++---×÷÷÷÷÷××--++++++-×------≈π</tspan>
+<tspan x="70" y="81.75" xml:space="preserve">         π∞-+++--++++---×÷÷==≠≠≈≈≈≈≠≠=÷×-××-×××--+--+×√π</tspan>
+<tspan x="70" y="88.00" xml:space="preserve">        ππ÷×-----+-×÷÷==≠≠≠≠≠≠≈≈∞∞∞∞≈≈≠=÷--××----++++-≈π</tspan>
+<tspan x="70" y="94.25" xml:space="preserve">         π×---×-+-×÷=≠=≠≠≠≠≠≈≈≈∞∞∞∞∞∞∞≈≠≠÷×-++++++++++≠π</tspan>
+<tspan x="70" y="100.50" xml:space="preserve">         π÷+-××-+×÷==≠≠≠≠≈≈≠≈≈≈∞∞∞∞∞∞∞≈≈≠≠÷××------++-≈π</tspan>
+<tspan x="70" y="106.75" xml:space="preserve">         π≠-+××+-×÷==≠≠≠≠≠≈≈≈≈≈≈∞∞∞∞∞∞≈≈≈≠≠==÷×÷÷××-+-√π</tspan>
+<tspan x="70" y="113.00" xml:space="preserve">         π≈-+-×--÷÷==≠≠≠≠≠≠≠≈≈≈≈≈≈≈≈≈∞≈≈≈≈≈≈≠≠====÷×-×π</tspan>
+<tspan x="70" y="119.25" xml:space="preserve">         ππ÷-+--×÷=≠≠≠≠≠≠≠≠≠≠≈≈≈≈∞∞≈≠=≈≈≈≈≈≈≈≈≈≠==÷×-=π</tspan>
+<tspan x="70" y="125.50" xml:space="preserve">          ππ×-×--×=≠≠≈≈≈≈≠≠≠≠≠=÷××××÷=≠≠=≠≈≈≈≈≈≠=÷×÷×÷≈√ππ</tspan>
+<tspan x="70" y="131.75" xml:space="preserve">          ππ≈-÷×××÷÷=÷=≠≠≠≠=÷÷××××××÷÷==≠≠≠=÷××---×÷=≈=÷≈π</tspan>
+<tspan x="70" y="138.00" xml:space="preserve">            π=÷-+++---×÷====÷--××--×÷÷----÷×÷=≠≠≠==≈≈≈≈≠=π</tspan>
+<tspan x="70" y="144.25" xml:space="preserve">            ππ÷×----×-+++--+-÷÷×-÷×-××÷××≠≈∞≈≈≈≈≠≠=≠÷=≠≠≈π</tspan>
+<tspan x="70" y="150.50" xml:space="preserve">          ππ√=-×--×-++-×-×=×-÷≠÷××÷==÷≈÷≠≈∞∞≈≈≈≠≠≠≠≈≠≈=≠≈π</tspan>
+<tspan x="70" y="156.75" xml:space="preserve">          π∞---÷×-×÷÷××---≠≈=×=≈≠===≠÷≠÷≈∞∞∞≈≈≈≠≠≠≠≠≠≠≠≈√π</tspan>
+<tspan x="70" y="163.00" xml:space="preserve">           ππ∞×÷÷××÷==××-÷≠∞∞≈××≠≠≠≠=÷÷≈∞∞∞∞≈≠≠≠≠≠≠≠≈≠≠≈ππ</tspan>
+<tspan x="70" y="169.25" xml:space="preserve">             π√×÷÷====÷×+×≠≈≈≈≈∞≈≠=≠≠≠≈≈≈∞≈≈≠≠≠≠≠≠≠≈≈≈≈πππ</tspan>
+<tspan x="70" y="175.50" xml:space="preserve">              π√÷×××××÷×-÷≠≈∞≈≈≈≠≠≠≈∞∞∞∞∞≈≈≈≠≠≠≠≠≠≠×≈πππ</tspan>
+<tspan x="70" y="181.75" xml:space="preserve">              ππ≠÷÷===÷××÷÷=≠=÷=≠≠≠≠≠≈∞∞∞≈≈≈≠≠≠≠≠≠==√</tspan>
+<tspan x="70" y="188.00" xml:space="preserve">                √=÷÷÷=××---×÷≠≈≠≠≈≈≈≈≈≈∞≈≈≈≈≈≈≈≠≠≠≠≠√</tspan>
+<tspan x="70" y="194.25" xml:space="preserve">                π√=÷×÷=÷=÷×÷≠=≈≈≈≈≈≈≈≈≈≈∞≈≈≈≈≈≈≠≠≠≠≠√π</tspan>
+<tspan x="70" y="200.50" xml:space="preserve">                 ππ=÷÷÷÷=÷÷=≠==≠≈≈≈≠≈≈≈≈≈≈≈≈≈≈≠≠==≠≠∞π</tspan>
+<tspan x="70" y="206.75" xml:space="preserve">                  ππ=÷××÷÷×--××÷÷÷÷=≠≠≈≈≈≈≈≠≠≠≠==≠≈≠≈ππ</tspan>
+<tspan x="70" y="213.00" xml:space="preserve">                   π√÷÷×÷=××÷==≠≠≠≠≠≠≠≠≠≠≠≠≠≠=÷÷=≈≈≠=√ππ</tspan>
+<tspan x="70" y="219.25" xml:space="preserve">                     π=÷××××××÷÷÷==≠≠≠≈≈≈≠≠=÷÷=≠≈≈≈≠=××√π</tspan>
+<tspan x="70" y="225.50" xml:space="preserve">                     ππ≈÷××÷===≠≈≈≈≈≈≈≈≈≠=÷÷÷≠≠≈∞≈≈≠≠×--≈πππ</tspan>
+<tspan x="70" y="231.75" xml:space="preserve">                     ππππ≠÷×÷=≠≠≠≠≈≠≠≠≠÷×÷÷=≠≠≈∞∞≈≈≠-++++-≠ππ</tspan>
+<tspan x="70" y="238.00" xml:space="preserve">                       ππππ≈÷×××÷÷÷××÷÷===≠≠≈≈≈≈∞≈=-++++-++=ππ</tspan>
+<tspan x="70" y="244.25" xml:space="preserve">                           ππ√=÷××÷=≠≠≠≠≠≠≠≈≈≈≈≈÷-+++-+--+++×∞π</tspan>
+<tspan x="70" y="250.50" xml:space="preserve">                           ππ∞-×÷×÷=≠==≠≠≠≈≈≈≠÷-++++--+×-+++++÷πππ</tspan>
+<tspan x="70" y="256.75" xml:space="preserve">                          ππ∞++-××-×÷÷=≠≠≠≠≠×---++-------++--+--=√πππ</tspan>
+<tspan x="70" y="263.00" xml:space="preserve">                       πππππ×+++--××==≠≠≠÷---------------------++++-÷∞ππ</tspan>
+<tspan x="70" y="269.25" xml:space="preserve">                     ππππ√=--++++----×÷×----------------------+++++++++×≈√πππ</tspan>
+<tspan x="70" y="275.50" xml:space="preserve">                     π∞=-+-×-+++++--×----×--------------------+++++++++++++×=≈√πππ</tspan>
+<tspan x="70" y="281.75" xml:space="preserve">                πππ√=+++---×++++++---+-----------+-×---------+++++++++++++++++++-÷∞πππππ</tspan>
+<tspan x="70" y="288.00" xml:space="preserve">          ππ πππ√÷-++++--+--+++++-++++++---------+-----------+++++++++++++++++++++++-×≠√πππ</tspan>
+<tspan x="70" y="294.25" xml:space="preserve">          ππ≈÷-++++++-+++++++++++++++++++---------+----------++++++++++++++++++++++-----×=ππ</tspan>
+<tspan x="70" y="300.50" xml:space="preserve">        ππ≈-+++++++++++++++++++++---×--++++--×+-----+----+++---+++++++++++++++++-----------∞</tspan>
+<tspan x="70" y="306.75" xml:space="preserve">        π=-×-+++++++++++++++++++-----+++++++++-------++------×-+++++++++++++++-+---------++÷ππ</tspan>
+<tspan x="70" y="313.00" xml:space="preserve">      ππ≠-+-++++++-++++-++--+++++++++--++--+++--------------×++++++++++++++---+-----++++++--≈π</tspan>
+<tspan x="70" y="319.25" xml:space="preserve">       π×++++++++---++--+++++++++++--------++---------------++++++++++++++--++-----++++++++--√π</tspan>
+<tspan x="70" y="325.50" xml:space="preserve">     ππ√-++++++-++++++--++++++++++--------++---------------+++++++++++-----++----------++++++÷π</tspan>
+<tspan x="70" y="331.75" xml:space="preserve">      π≠+++++++++++++--++--+++-×÷×-+------++--------------+++++++++++-----++----+++++--×-+++++÷ππ</tspan>
+<tspan x="70" y="338.00" xml:space="preserve">      π≠+++-+++++++++--++---++-----------++--------------+++++++----------+----++++++++------++≈ππ</tspan>
+<tspan x="70" y="344.25" xml:space="preserve">     ππ≠++++++++--+++-++----+-×------×--++----×---------++++++-----------++-------+++++++-----+=π</tspan>
+<tspan x="70" y="350.50" xml:space="preserve">      π÷++----++++++--++----+××----××--++--------------+++-++-----+----++++----------++++++---+=π</tspan>
+<tspan x="70" y="356.75" xml:space="preserve">      π÷+++--+++++++-++----+--×-×------++------------+++++++-----------++++----+-+--------+++--=ππ</tspan>
+<tspan x="70" y="363.00" xml:space="preserve">     ππ×++--+++++++--++----+-×--------++-------------++++++-----------++++--+-----++-----+++++--√π</tspan>
+<tspan x="70" y="369.25" xml:space="preserve">     π√-+-+++++++++-+++---++-------+--+-----+------+++++++-----------+++++-+------++-------++++-×πππ</tspan>
+<tspan x="70" y="375.50" xml:space="preserve">      √-+++++++++++-++----++----+----+-------------+++-----+---------++++-------+-----------++++-≠π</tspan>
+<tspan x="70" y="381.75" xml:space="preserve">     π∞++-++++++++--++----+---++-+---+-----------++++----------------++++------+-------------++++-π</tspan>
+<tspan x="70" y="388.00" xml:space="preserve">     π≠+++++++++++--++----+--++++-×-+------------++---------+++++++-++++++-----++++------+---++++-π</tspan>
+<tspan x="70" y="394.25" xml:space="preserve">     π=++++++++++--+++----+++++++--++-----------+++++++++++++--+--+-++++++------++++++---++--++++=π</tspan>
+<tspan x="70" y="400.50" xml:space="preserve">     π×++-+++++++--++-----+---++--+++----------+--+++++++--+------+-+++++++-----+++++++---++--+++∞π</tspan>
+<tspan x="70" y="406.75" xml:space="preserve">     π-++++++++++--++----+--++++--++----------++--------------+--++++++++++------+++++++--++++++-∞</tspan>
+<tspan x="70" y="413.00" xml:space="preserve">     π-++++++++++-+++----+--+++--+++---------++--++++++++++++----+++++++++++++---++++++++--+++-+-∞</tspan>
+<tspan x="70" y="419.25" xml:space="preserve">     π-+++++++++--+++---++---++-+++----++++--+++------+++++++++++++++++++++++++---++++++++--++--×√</tspan>
+<tspan x="70" y="425.50" xml:space="preserve">     π-+++++++++-++++---+----++++++---+++---++-------++++++++++++++++++++++++++---++++++++--++++-√</tspan>
+<tspan x="70" y="431.75" xml:space="preserve">    π∞++++++++++-+++---+---++++++++---+-+--++++--+++++++------++++++++++++++++++----+++++++--+++-∞π</tspan>
+<tspan x="70" y="438.00" xml:space="preserve">    π≈+++++++++-++++---+--+++++++++--+++--+++++-+----+++------+++++++++++++++++++----+++++++-++++≠π</tspan>
+<tspan x="70" y="444.25" xml:space="preserve">    π=+++++++++-++++--+++++++++++++++-+--+++++--------++++----+++++++++++++++++++-----+++++++++++÷ππ</tspan>
+<tspan x="70" y="450.50" xml:space="preserve">    π×++++++++--++++--+++++++++++++++++-+++++---------+-+++++-++++++++++++++++++++-----++++++++++-π</tspan>
 </text>
   </g>
 
