@@ -3,7 +3,7 @@
 #
 #   python3 scripts/fetch_data.py
 #
-# The update-banners.yml GitHub Action runs the same command daily.
+# The update-profile.yml GitHub Action runs the same command daily.
 # =============================================================================
 
 # Terminal header (top line, purple)

@@ -1,0 +1,100 @@
+name: Update profile
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/fetch_data.py"
+      - "system_info.yaml"
+      - "requirements.txt"
+      - ".github/workflows/update-profile.yml"
+
+concurrency: update-profile
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update banners
+        env:
+          USER_NAME: ${{ github.repository_owner }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
+          BIRTHDAY: ${{ vars.BIRTHDAY }}
+        run: |
+          pip install -r requirements.txt
+          python scripts/fetch_data.py
+
+      - name: Generate dark cards
+        if: github.event_name != 'push'
+        uses: vn7n24fzkq/github-profile-summary-cards@release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN || secrets.SUMMARY_GITHUB_TOKEN || github.token }}
+        with:
+          USERNAME: ${{ github.repository_owner }}
+          THEME: github_dark
+          AUTO_PUSH: false
+
+      - name: Preserve dark cards
+        if: github.event_name != 'push'
+        run: |
+          for card in 0-profile-details 1-repos-per-language 2-most-commit-language 3-stats 4-productive-time; do
+            test -f profile-summary-card-output/github_dark/$card.svg
+          done
+          test -f profile-summary-card-output/github_dark/README.md
+          rm -rf assets/profile-summary-card-output/github_dark
+          mv profile-summary-card-output/github_dark assets/profile-summary-card-output/
+
+      - name: Generate light cards
+        if: github.event_name != 'push'
+        uses: vn7n24fzkq/github-profile-summary-cards@release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN || secrets.SUMMARY_GITHUB_TOKEN || github.token }}
+        with:
+          USERNAME: ${{ github.repository_owner }}
+          THEME: github
+          AUTO_PUSH: false
+
+      - name: Preserve light cards
+        if: github.event_name != 'push'
+        run: |
+          for card in 0-profile-details 1-repos-per-language 2-most-commit-language 3-stats 4-productive-time; do
+            test -f profile-summary-card-output/github/$card.svg
+          done
+          test -f profile-summary-card-output/github/README.md
+          test -f profile-summary-card-output/README.md
+          rm -rf assets/profile-summary-card-output/github
+          mv profile-summary-card-output/github assets/profile-summary-card-output/
+          mv profile-summary-card-output/README.md assets/profile-summary-card-output/
+          find assets/profile-summary-card-output -name README.md -exec \
+            sed -i 's|/main/profile-summary-card-output/|/main/assets/profile-summary-card-output/|g' {} +
+
+      - name: Commit updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f assets/dark.svg assets/light.svg cache
+          if [ "${{ github.event_name }}" != push ]; then
+            git add assets/profile-summary-card-output
+          fi
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: update profile [skip ci]"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
