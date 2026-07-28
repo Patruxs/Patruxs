@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.update_system_info import (
+from scripts.fetch_data import (
     CONFIG,
     LINE_WIDTH,
     RULE_WIDTH,
@@ -40,6 +40,24 @@ class AlignmentTest(unittest.TestCase):
             [LINE_WIDTH] * len(content_rows),
             [len(row) for row in content_rows],
         )
+
+    def test_build_rows_keeps_existing_stats_without_a_token(self) -> None:
+        stats = {
+            "repos": "15",
+            "contrib": "17",
+            "stars": "0",
+            "commits": "424",
+            "followers": "2",
+            "loc": "362,091",
+            "loc_add": "501,721",
+            "loc_del": "139,630",
+        }
+
+        rows = build_rows(load_config(CONFIG), github_stats=stats)
+        rendered = "".join(segment[1] for row in rows for segment in row)
+
+        for value in stats.values():
+            self.assertIn(value, rendered)
 
 
 if __name__ == "__main__":

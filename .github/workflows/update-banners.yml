@@ -11,8 +11,7 @@ on:
     branches:
       - main
     paths:
-      - "scripts/today.py"
-      - "scripts/update_system_info.py"
+      - "scripts/fetch_data.py"
       - "system_info.yaml"
       - ".github/workflows/update-banners.yml"
 
@@ -44,14 +43,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run today.py
+      - name: Run fetch_data.py
         env:
           USER_NAME: ${{ github.repository_owner }}
           # PAT recommended for private repos + full LOC/stats.
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
           # Optional repo variable: YYYY-MM-DD
           BIRTHDAY: ${{ vars.BIRTHDAY }}
-        run: python scripts/today.py
+        run: python scripts/fetch_data.py
 
       - name: Commit and push banner updates
         run: |

@@ -1,11 +1,9 @@
 # =============================================================================
-# SYSTEM.INFO — edit this file, then run (from repo root):
+# SYSTEM.INFO - edit this file, then run (from repo root):
 #
-#   python3 scripts/update_system_info.py
+#   python3 scripts/fetch_data.py
 #
-# Live fields (Uptime, Lang, GitHub Stats) also refresh via:
-#   python3 scripts/today.py
-#   or GitHub Action: update-banners.yml
+# The update-banners.yml GitHub Action runs the same command daily.
 # =============================================================================
 
 # Terminal header (top line, purple)
@@ -29,7 +27,7 @@ fields:
   - key: Status
     value: Building · Learning · Shipping
 
-  # Auto: ALL languages across owned non-fork repos (today.py / GitHub Action)
+  # Auto: ALL languages across owned non-fork repos (fetch_data.py / GitHub Action)
   - key: Lang
     value: ""
 
@@ -45,6 +43,6 @@ sections:
       - key: Grid.Github
         value: Patruxs
 
-  # Filled live by today.py (ids: repo_data, star_data, commit_data, …)
+  # Filled live by fetch_data.py (ids: repo_data, star_data, commit_data, …)
   - title: GitHub Stats
     kind: github_stats

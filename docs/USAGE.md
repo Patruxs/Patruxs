@@ -25,8 +25,7 @@ Patruxs/
 │       └── github_dark/            # Dark profile summary cards
 │
 ├── scripts/
-│   ├── today.py                   # Live refresh: Uptime, Lang, GitHub Stats
-│   ├── update_system_info.py      # Apply system_info.yaml → SVGs
+│   ├── fetch_data.py              # Apply YAML and refresh live GitHub data
 │   ├── ascii_to_svg.py            # portrait.txt → SVG <tspan> block
 │   ├── image_to_ascii.py          # Photo → ASCII portrait
 │   └── README.md
@@ -54,12 +53,9 @@ pip install -r requirements.txt
 # 2. Edit static fields
 #    open system_info.yaml
 
-# 3a. Apply YAML + light live fill (Uptime, Lang)
-python3 scripts/update_system_info.py
-
-# 3b. Or full live refresh (Uptime, all languages, GitHub Stats)
+# 3. Apply YAML and refresh live fields
 export ACCESS_TOKEN=ghp_...          # optional, recommended for stats
-python3 scripts/today.py
+python3 scripts/fetch_data.py
 
 # 4. Preview
 #    open assets/dark.svg and assets/light.svg in a browser
@@ -76,16 +72,16 @@ git push
 
 | Area | Source | Updates how |
 |------|--------|-------------|
-| **Uptime** | GitHub account `created_at`, or `BIRTHDAY` variable | Daily Action / `today.py` |
-| **Lang** | Languages across **owned, non-fork** repos (by code size) | Daily Action / `today.py` |
-| **GitHub Stats** | Repos, contributed repos, stars, commits, followers, LOC | Daily Action / `today.py` (needs token) |
+| **Uptime** | GitHub account `created_at`, or `BIRTHDAY` variable | Daily Action / `fetch_data.py` |
+| **Lang** | Languages across **owned, non-fork** repos (by code size) | Daily Action / `fetch_data.py` |
+| **GitHub Stats** | Repos, contributed repos, stars, commits, followers, LOC | Daily Action / `fetch_data.py` (needs token) |
 | **Snake** | Contribution graph | `snake.yml` every 12 hours |
-| **Subject, Role, Origin, …** | `system_info.yaml` | You edit YAML, then run `update_system_info.py` |
+| **Subject, Role, Origin, …** | `system_info.yaml` | You edit YAML, then run `fetch_data.py` |
 | **Contact** | `system_info.yaml` | Same |
 | **ASCII portrait** | `assets/portrait.txt` | Manual / `image_to_ascii.py` |
 
 Leave live keys empty in YAML (`Uptime`, `Lang`). `GitHub Stats` is a section
-with `kind: github_stats` - values are filled by `today.py`, not hand-edited.
+with `kind: github_stats` - values are filled by `fetch_data.py`, not hand-edited.
 
 ### Lang display
 
@@ -131,7 +127,7 @@ fields:
     value: Building · Learning · Shipping
 
   - key: Lang
-    value: ""                    # live — all repo languages
+    value: ""                    # live - all repo languages
 
 sections:
   - title: Contact
@@ -152,7 +148,7 @@ sections:
 ### 2. Apply changes
 
 ```bash
-python3 scripts/update_system_info.py
+python3 scripts/fetch_data.py
 ```
 
 This rebuilds the SYSTEM.INFO panel in both theme SVGs and refreshes Uptime + Lang.
@@ -178,7 +174,7 @@ Under `fields:`:
     value: APIs · Distributed systems
 ```
 
-Then run `python3 scripts/update_system_info.py`.
+Then run `python3 scripts/fetch_data.py`.
 
 ---
 
@@ -188,12 +184,11 @@ Run from repo root:
 
 | Command | Purpose |
 |---------|---------|
-| `python3 scripts/today.py` | Full live update (Uptime, Lang, Stats) |
-| `python3 scripts/update_system_info.py` | YAML structure + Uptime/Lang |
+| `python3 scripts/fetch_data.py` | Full live update (Uptime, Lang, Stats) |
 | `python3 scripts/ascii_to_svg.py` | Build tspans from `assets/portrait.txt` |
 | `python3 scripts/image_to_ascii.py PHOTO -o assets/portrait.txt` | Photo → ASCII |
 
-### `today.py` environment
+### `fetch_data.py` environment
 
 | Variable | Required | Meaning |
 |----------|----------|---------|
@@ -207,7 +202,7 @@ Example:
 export USER_NAME=Patruxs
 export ACCESS_TOKEN=ghp_xxxxxxxx
 export BIRTHDAY=2002-07-05   # optional
-python3 scripts/today.py
+python3 scripts/fetch_data.py
 ```
 
 Without `ACCESS_TOKEN`, Uptime and Lang still update (public APIs). GitHub Stats
@@ -228,7 +223,7 @@ python3 scripts/ascii_to_svg.py
 ```
 
 3. Paste/update the portrait `<tspan>` block inside `assets/dark.svg` and `assets/light.svg`
-   (or have an agent do it). `update_system_info.py` does **not** rewrite VISUAL.MAP.
+   (or have an agent do it). `fetch_data.py` does **not** rewrite VISUAL.MAP.
 
 ### From a photo
 
@@ -269,7 +264,7 @@ Referenced from `README.md`:
 
 | Workflow | File | Schedule | What it does |
 |----------|------|----------|--------------|
-| **Update profile banners** | `update-banners.yml` | Daily 00:00 UTC | Runs `scripts/today.py`, commits SVG changes |
+| **Update profile banners** | `update-banners.yml` | Daily 00:00 UTC | Runs `scripts/fetch_data.py`, commits SVG changes |
 | **Profile summary cards** | `summary-cards.yml` | Daily 00:30 UTC | Regenerates both themes under `assets/profile-summary-card-output/` and publishes them to `main` |
 | **Generate snake animation** | `snake.yml` | Every 12 hours | Platane/snk → `snake.svg` / `snake-dark.svg` |
 
@@ -286,7 +281,7 @@ Repo → **Settings → Secrets and variables → Actions**
 
 Also set **Actions → General → Workflow permissions** to **Read and write**.
 
-Suggested PAT scopes (see comments in `scripts/today.py`):
+Suggested PAT scopes (see comments in `scripts/fetch_data.py`):
 
 - Account: read followers / starring / watching  
 - Repositories: contents, metadata, commit statuses (as needed for LOC)
@@ -328,8 +323,8 @@ pip install -r requirements.txt
 
 | Package | Used by |
 |---------|---------|
-| `python-dateutil`, `requests`, `lxml` | `today.py` |
-| `PyYAML` | `update_system_info.py` (optional fallback parser exists) |
+| `python-dateutil`, `requests`, `lxml` | `fetch_data.py` |
+| `PyYAML` | `fetch_data.py` (optional fallback parser exists) |
 | `numpy`, `Pillow` | `image_to_ascii.py` |
 
 ---
@@ -344,16 +339,15 @@ pip install -r requirements.txt
 | Stats stay `0` | Add `ACCESS_TOKEN` secret (PAT), re-run workflow |
 | Lang missing languages | Owned **non-fork** repos only; private needs PAT |
 | YAML parse / SVG XML error | Check indentation and quotes in `system_info.yaml` |
-| `python scripts/today.py` path errors | Run from **repo root**, not from `scripts/` |
+| `python scripts/fetch_data.py` path errors | Run from **repo root**, not from `scripts/` |
 
 ---
 
 ## One-liners
 
 ```text
-Static text   →  edit system_info.yaml  →  python3 scripts/update_system_info.py  →  git push
-Live fields   →  python3 scripts/today.py                                        →  git push
-Portrait      →  edit assets/portrait.txt  (or image_to_ascii.py)  →  re-embed SVGs →  git push
-Daily auto    →  GitHub Action update-banners.yml (Uptime + Lang + Stats)
-Snake auto    →  GitHub Action snake.yml
+Banner        ->  edit system_info.yaml  ->  python3 scripts/fetch_data.py  ->  git push
+Portrait      ->  edit assets/portrait.txt (or image_to_ascii.py)  ->  re-embed SVGs
+Daily auto    ->  GitHub Action update-banners.yml (Uptime + Lang + Stats)
+Snake auto    ->  GitHub Action snake.yml
 ```
