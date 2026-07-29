@@ -59,8 +59,7 @@ color schemes before publishing.
 Edit the public profile data near the top of
 `scripts/generate_profile.py`:
 
-- `HANDLE`
-- `INFO_SECTIONS`
+- `INFO_LINES`
 - `LOGO_MARKS`
 
 Replace `assets/portrait.png` to change the portrait. A transparent-background

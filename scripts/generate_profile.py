@@ -28,64 +28,143 @@ from scipy.optimize import linear_sum_assignment
 @dataclass(frozen=True)
 class InfoToken:
     text: str
-    class_name: str = ""
+    class_name: str = "cc"
+    element_id: str = ""
 
 
-InfoValue = str | tuple[InfoToken, ...]
-InfoItem = tuple[str, InfoValue]
-InfoRow = tuple[InfoItem, ...]
-
-
-INFO_SECTIONS: tuple[tuple[str, tuple[InfoRow, ...]], ...] = (
+INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
     (
-        "Profile",
-        (
-            (("Uptime", "4 years, 10 months, 21 days"),),
-            (("Subject", "Patrick"),),
-            (("Role", "Backend Engineer · Fullstack Engineer"),),
-            (("Origin", "Vietnam · Remote"),),
-            (("Education", "Software Engineering"),),
-            (("Status", "Building · Learning · Shipping"),),
-            (("Lang", "TypeScript · Java · HTML · CSS +14"),),
-        ),
+        InfoToken("patruxs@devos", "head"),
+        InfoToken(" -------------------------------------------------"),
     ),
     (
-        "Contact",
-        (
-            (("Grid.Mail", "laithuanphat.work@gmail.com"),),
-            (("Grid.Portfolio", "github.com/Patruxs"),),
-            (("Grid.LinkedIn", "linkedin.com/in/patruxs"),),
-            (("Grid.GitHub", "github.com/Patruxs"),),
-        ),
+        InfoToken(". "),
+        InfoToken("Uptime", "key"),
+        InfoToken(":"),
+        InfoToken(" ...................... ", element_id="age_data_dots"),
+        InfoToken("4 years, 10 months, 21 days", "value", "age_data"),
     ),
     (
-        "GitHub Stats",
-        (
-            (
-                (
-                    "Repos",
-                    (
-                        InfoToken("15 ("),
-                        InfoToken("Contributed:", "inline-label"),
-                        InfoToken(" 17)"),
-                    ),
-                ),
-                ("Stars", "0"),
-            ),
-            (("Commits", "431"), ("Followers", "2")),
-            (
-                (
-                    "Lines of Code",
-                    (
-                        InfoToken("360,893 ("),
-                        InfoToken("510,105++", "positive"),
-                        InfoToken(", "),
-                        InfoToken("149,272--", "negative"),
-                        InfoToken(")"),
-                    ),
-                ),
-            ),
-        ),
+        InfoToken(". "),
+        InfoToken("Subject", "key"),
+        InfoToken(": ......................................... "),
+        InfoToken("Patrick", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Role", "key"),
+        InfoToken(": .............. "),
+        InfoToken("Backend Engineer · Fullstack Engineer", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Origin", "key"),
+        InfoToken(": ................................. "),
+        InfoToken("Vietnam · Remote", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Education", "key"),
+        InfoToken(": .......................... "),
+        InfoToken("Software Engineering", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Status", "key"),
+        InfoToken(": ................... "),
+        InfoToken("Building · Learning · Shipping", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Lang", "key"),
+        InfoToken(": "),
+        InfoToken("................. ", element_id="lang_data_dots"),
+        InfoToken("TypeScript · Java · HTML · CSS +14", "value", "lang_data"),
+    ),
+    (InfoToken(". "),),
+    (
+        InfoToken("- Contact", "accent"),
+        InfoToken(" -----------------------------------------------------"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Grid", "key"),
+        InfoToken("."),
+        InfoToken("Mail", "key"),
+        InfoToken(": ................... "),
+        InfoToken("laithuanphat.work@gmail.com", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Grid", "key"),
+        InfoToken("."),
+        InfoToken("Portfolio", "key"),
+        InfoToken(": ....................... "),
+        InfoToken("github.com/Patruxs", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Grid", "key"),
+        InfoToken("."),
+        InfoToken("LinkedIn", "key"),
+        InfoToken(": ................... "),
+        InfoToken("linkedin.com/in/patruxs", "value"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Grid", "key"),
+        InfoToken("."),
+        InfoToken("Github", "key"),
+        InfoToken(": ..................................... "),
+        InfoToken("Patruxs", "value"),
+    ),
+    (InfoToken(". "),),
+    (
+        InfoToken("- GitHub Stats", "accent"),
+        InfoToken(" ------------------------------------------------"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Repos", "key"),
+        InfoToken(":"),
+        InfoToken(" .... ", element_id="repo_data_dots"),
+        InfoToken("15", "value", "repo_data"),
+        InfoToken(" {"),
+        InfoToken("Contributed", "key"),
+        InfoToken(": "),
+        InfoToken("17", "value", "contrib_data"),
+        InfoToken("} | "),
+        InfoToken("Stars", "key"),
+        InfoToken(":"),
+        InfoToken(" .............. ", element_id="star_data_dots"),
+        InfoToken("0", "value", "star_data"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Commits", "key"),
+        InfoToken(":"),
+        InfoToken(" ................... ", element_id="commit_data_dots"),
+        InfoToken("431", "value", "commit_data"),
+        InfoToken(" | "),
+        InfoToken("Followers", "key"),
+        InfoToken(":"),
+        InfoToken(" .......... ", element_id="follower_data_dots"),
+        InfoToken("2", "value", "follower_data"),
+    ),
+    (
+        InfoToken(". "),
+        InfoToken("Lines of Code on GitHub", "key"),
+        InfoToken(":"),
+        InfoToken(". ", element_id="loc_data_dots"),
+        InfoToken("360,893", "value", "loc_data"),
+        InfoToken(" ( "),
+        InfoToken("510,165", "addColor", "loc_add"),
+        InfoToken("++", "addColor"),
+        InfoToken(", "),
+        InfoToken("", element_id="loc_del_dots"),
+        InfoToken("149,272", "delColor", "loc_del"),
+        InfoToken("--", "delColor"),
+        InfoToken(" )"),
     ),
 )
 LOGO_MARKS = ("PY", "TS", "DB")
@@ -524,65 +603,39 @@ def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.nda
 
 def info_rows_svg() -> str:
     left = 506.0
-    value_right = 1124.0
-    y = 133.0
-    row_gap = 20.0
-    column_gap = 26.0
+    y = 128.0
+    row_gap = 22.0
+    clip_definitions: list[str] = []
     parts: list[str] = []
 
-    for section_index, (section, rows) in enumerate(INFO_SECTIONS):
-        if section_index:
-            y += 8.0
-        parts.append(
-            f'<text x="{left:.1f}" y="{y:.1f}" class="info-heading">'
-            f'- {escape(section)}</text>'
+    for line_index, tokens in enumerate(INFO_LINES):
+        line_y = y + line_index * row_gap
+        clip_definitions.append(
+            f'<clipPath id="lc{line_index}">'
+            f'<rect x="496" y="{line_y - 15:.1f}" width="638" height="20"/>'
+            '</clipPath>'
         )
-        y += 21.0
+        spans: list[str] = []
+        for token_index, token in enumerate(tokens):
+            position = (
+                f' x="{left:.1f}" y="{line_y:.1f}"'
+                if token_index == 0
+                else ""
+            )
+            element_id = (
+                f' id="{escape(token.element_id)}"' if token.element_id else ""
+            )
+            spans.append(
+                f'<tspan{position} class="{escape(token.class_name)}"{element_id}>'
+                f'{escape(token.text)}</tspan>'
+            )
+        parts.append(
+            f'<g clip-path="url(#lc{line_index})">'
+            f'<text x="{left:.1f}" y="0" fill="var(--text)" class="terminal-line">'
+            f'{"".join(spans)}</text></g>'
+        )
 
-        for row in rows:
-            column_width = (
-                value_right - left - column_gap * (len(row) - 1)
-            ) / len(row)
-            for column_index, (label, value) in enumerate(row):
-                column_left = left + column_index * (column_width + column_gap)
-                column_right = column_left + column_width
-                if isinstance(value, str):
-                    plain_value = value
-                    rendered_value = escape(value)
-                else:
-                    plain_value = "".join(token.text for token in value)
-                    rendered_value = "".join(
-                        (
-                            f'<tspan class="{escape(token.class_name)}">'
-                            f'{escape(token.text)}</tspan>'
-                            if token.class_name
-                            else escape(token.text)
-                        )
-                        for token in value
-                    )
-
-                label_width = text_width(label, 12)
-                maximum_value_width = max(column_width - label_width - 24.0, 8.0)
-                value_width = min(text_width(plain_value, 12), maximum_value_width)
-                leader_start = column_left + label_width + 11.0
-                leader_end = column_right - value_width - 12.0
-                if leader_end > leader_start:
-                    parts.append(
-                        f'<line x1="{leader_start:.1f}" y1="{y - 4:.1f}" '
-                        f'x2="{leader_end:.1f}" y2="{y - 4:.1f}" class="leader"/>'
-                    )
-                parts.append(
-                    f'<text x="{column_left:.1f}" y="{y:.1f}" class="info-row label" '
-                    f'textLength="{label_width:.1f}" lengthAdjust="spacingAndGlyphs">'
-                    f'{escape(label)}</text>'
-                )
-                parts.append(
-                    f'<text x="{column_right:.1f}" y="{y:.1f}" text-anchor="end" '
-                    f'class="info-row value" textLength="{value_width:.1f}" '
-                    f'lengthAdjust="spacingAndGlyphs">{rendered_value}</text>'
-                )
-            y += row_gap
-    return "".join(parts)
+    return f'<defs>{"".join(clip_definitions)}</defs>{"".join(parts)}'
 
 
 def build_portrait_layers(points: np.ndarray, prefix: str, logo_centroid: np.ndarray) -> tuple[str, ThemeMetrics]:
@@ -738,14 +791,12 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     text {{ font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }}
     .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
     .section {{ font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }}
-    .info-heading {{ font-size:13px; fill:var(--label); font-weight:700; }}
-    .info-row {{ font-size:12px; dominant-baseline:alphabetic; }}
-    .label {{ fill:var(--label); font-weight:700; }}
+    .terminal-line {{ font-size:11.5px; dominant-baseline:alphabetic; }}
+    .head, .key, .accent {{ fill:var(--label); font-weight:700; }}
+    .cc {{ fill:var(--muted); }}
     .value {{ fill:var(--text); }}
-    .inline-label {{ fill:var(--label); font-weight:700; }}
-    .positive {{ fill:var(--positive); font-weight:700; }}
-    .negative {{ fill:var(--negative); font-weight:700; }}
-    .leader {{ stroke:var(--muted); stroke-opacity:.6; stroke-width:1; stroke-dasharray:1 4; }}
+    .addColor {{ fill:var(--positive); font-weight:700; }}
+    .delColor {{ fill:var(--negative); font-weight:700; }}
     .live {{ font-size:12px; fill:var(--live); font-weight:700; letter-spacing:1.4px; }}
   </style>
 
