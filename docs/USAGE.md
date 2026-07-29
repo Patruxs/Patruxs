@@ -11,8 +11,8 @@ Run every command from the repository root.
 ```text
 Patruxs/
 ├── README.md
-├── profile-dark.svg
-├── profile-light.svg
+├── dark.svg
+├── light.svg
 ├── metrics.json
 ├── requirements.txt
 ├── assets/
@@ -46,8 +46,8 @@ python3 scripts/generate_profile.py
 
 The command reads `assets/portrait.png` and writes:
 
-- `profile-dark.svg` - the dark profile asset committed to the repository
-- `profile-light.svg` - the light profile asset committed to the repository
+- `dark.svg` - the dark profile asset committed to the repository
+- `light.svg` - the light profile asset committed to the repository
 - `metrics.json` - deterministic generation and animation diagnostics
 - `profile.html` - a local browser preview ignored by Git
 
@@ -60,7 +60,7 @@ Edit the public profile data near the top of
 `scripts/generate_profile.py`:
 
 - `HANDLE`
-- `PROFILE_ROWS`
+- `INFO_SECTIONS`
 - `LOGO_MARKS`
 
 Replace `assets/portrait.png` to change the portrait. A transparent-background
@@ -90,8 +90,8 @@ GitHub renders the root banner with:
 ```html
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./profile-dark.svg"/>
-    <img src="./profile-light.svg" width="100%" alt="Patruxs animated terminal profile"/>
+    <source media="(prefers-color-scheme: dark)" srcset="./dark.svg"/>
+    <img src="./light.svg" width="100%" alt="Patruxs animated terminal profile"/>
   </picture>
 </p>
 ```

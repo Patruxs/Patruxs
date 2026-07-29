@@ -25,23 +25,69 @@ from scipy.optimize import linear_sum_assignment
 # ---------------------------------------------------------------------------
 # Public profile data. Edit this block, then rerun the script.
 # ---------------------------------------------------------------------------
-PROFILE_ROWS: list[tuple[str, str]] = [
-    ("Subject", "PATRICK"),
-    ("Role", "BACKEND · FULLSTACK ENGINEER"),
-    ("Origin", "VIETNAM · REMOTE"),
-    ("Education", "SOFTWARE ENGINEERING"),
-    ("Status", "BUILDING · LEARNING · SHIPPING"),
-    ("ToolChain", "GIT · LINUX · PYTHON"),
-    ("Core.Lang", "PYTHON · TYPESCRIPT"),
-    ("Core.Frontend", "REACT · NEXT.JS"),
-    ("Core.Backend", "FASTAPI · NODE.JS"),
-    ("Core.Database", "POSTGRESQL"),
-    ("Core.Infra", "DOCKER · AWS"),
-    ("Grid.Mail", "laithuanphat.work@gmail.com"),
-    ("Grid.Portfolio", "github.com/Patruxs"),
-    ("Grid.LinkedIn", "linkedin.com/in/patruxs"),
-    ("Grid.GitHub", "github.com/Patruxs"),
-]
+@dataclass(frozen=True)
+class InfoToken:
+    text: str
+    class_name: str = ""
+
+
+InfoValue = str | tuple[InfoToken, ...]
+InfoItem = tuple[str, InfoValue]
+InfoRow = tuple[InfoItem, ...]
+
+
+INFO_SECTIONS: tuple[tuple[str, tuple[InfoRow, ...]], ...] = (
+    (
+        "Profile",
+        (
+            (("Uptime", "4 years, 10 months, 21 days"),),
+            (("Subject", "Patrick"),),
+            (("Role", "Backend Engineer · Fullstack Engineer"),),
+            (("Origin", "Vietnam · Remote"),),
+            (("Education", "Software Engineering"),),
+            (("Status", "Building · Learning · Shipping"),),
+            (("Lang", "TypeScript · Java · HTML · CSS +14"),),
+        ),
+    ),
+    (
+        "Contact",
+        (
+            (("Grid.Mail", "laithuanphat.work@gmail.com"),),
+            (("Grid.Portfolio", "github.com/Patruxs"),),
+            (("Grid.LinkedIn", "linkedin.com/in/patruxs"),),
+            (("Grid.GitHub", "github.com/Patruxs"),),
+        ),
+    ),
+    (
+        "GitHub Stats",
+        (
+            (
+                (
+                    "Repos",
+                    (
+                        InfoToken("15 ("),
+                        InfoToken("Contributed:", "inline-label"),
+                        InfoToken(" 17)"),
+                    ),
+                ),
+                ("Stars", "0"),
+            ),
+            (("Commits", "431"), ("Followers", "2")),
+            (
+                (
+                    "Lines of Code",
+                    (
+                        InfoToken("360,893 ("),
+                        InfoToken("510,105++", "positive"),
+                        InfoToken(", "),
+                        InfoToken("149,272--", "negative"),
+                        InfoToken(")"),
+                    ),
+                ),
+            ),
+        ),
+    ),
+)
 LOGO_MARKS = ("PY", "TS", "DB")
 
 # ---------------------------------------------------------------------------
@@ -479,34 +525,63 @@ def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.nda
 def info_rows_svg() -> str:
     left = 506.0
     value_right = 1124.0
-    y = 143.0
-    row_gap = 23.0
+    y = 133.0
+    row_gap = 20.0
+    column_gap = 26.0
     parts: list[str] = []
 
-    for index, (label, value) in enumerate(PROFILE_ROWS):
-        if index in (6, 11):
-            y += 10.0
-        label_text = label.upper()
-        label_width = text_width(label_text, 14)
-        value_width = min(text_width(value, 14), 330.0)
-        leader_start = left + label_width + 13.0
-        leader_end = value_right - value_width - 14.0
-        if leader_end > leader_start:
-            parts.append(
-                f'<line x1="{leader_start:.1f}" y1="{y - 4:.1f}" '
-                f'x2="{leader_end:.1f}" y2="{y - 4:.1f}" class="leader"/>'
-            )
+    for section_index, (section, rows) in enumerate(INFO_SECTIONS):
+        if section_index:
+            y += 8.0
         parts.append(
-            f'<text x="{left:.1f}" y="{y:.1f}" class="row label" '
-            f'textLength="{label_width:.1f}" lengthAdjust="spacingAndGlyphs">'
-            f'{escape(label_text)}</text>'
+            f'<text x="{left:.1f}" y="{y:.1f}" class="info-heading">'
+            f'- {escape(section)}</text>'
         )
-        parts.append(
-            f'<text x="{value_right:.1f}" y="{y:.1f}" text-anchor="end" class="row value" '
-            f'textLength="{value_width:.1f}" lengthAdjust="spacingAndGlyphs">'
-            f'{escape(value)}</text>'
-        )
-        y += row_gap
+        y += 21.0
+
+        for row in rows:
+            column_width = (
+                value_right - left - column_gap * (len(row) - 1)
+            ) / len(row)
+            for column_index, (label, value) in enumerate(row):
+                column_left = left + column_index * (column_width + column_gap)
+                column_right = column_left + column_width
+                if isinstance(value, str):
+                    plain_value = value
+                    rendered_value = escape(value)
+                else:
+                    plain_value = "".join(token.text for token in value)
+                    rendered_value = "".join(
+                        (
+                            f'<tspan class="{escape(token.class_name)}">'
+                            f'{escape(token.text)}</tspan>'
+                            if token.class_name
+                            else escape(token.text)
+                        )
+                        for token in value
+                    )
+
+                label_width = text_width(label, 12)
+                maximum_value_width = max(column_width - label_width - 24.0, 8.0)
+                value_width = min(text_width(plain_value, 12), maximum_value_width)
+                leader_start = column_left + label_width + 11.0
+                leader_end = column_right - value_width - 12.0
+                if leader_end > leader_start:
+                    parts.append(
+                        f'<line x1="{leader_start:.1f}" y1="{y - 4:.1f}" '
+                        f'x2="{leader_end:.1f}" y2="{y - 4:.1f}" class="leader"/>'
+                    )
+                parts.append(
+                    f'<text x="{column_left:.1f}" y="{y:.1f}" class="info-row label" '
+                    f'textLength="{label_width:.1f}" lengthAdjust="spacingAndGlyphs">'
+                    f'{escape(label)}</text>'
+                )
+                parts.append(
+                    f'<text x="{column_right:.1f}" y="{y:.1f}" text-anchor="end" '
+                    f'class="info-row value" textLength="{value_width:.1f}" '
+                    f'lengthAdjust="spacingAndGlyphs">{rendered_value}</text>'
+                )
+            y += row_gap
     return "".join(parts)
 
 
@@ -634,7 +709,8 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
             "description": "Animated dark-mode terminal profile for Patruxs.",
             "palette": (
                 "--bg:#080A0D; --panel:#0D1117; --stroke:#2B313B; --text:#E6EDF3;\n"
-                "      --muted:#7D8998; --portrait:#A8F07A; --live:#FF4D5A;"
+                "      --muted:#7D8998; --label:#39D0D8; --portrait:#A8F07A;\n"
+                "      --positive:#41D17D; --negative:#FF667A; --live:#FF4D5A;"
             ),
             "portrait": dark_layers,
         },
@@ -642,7 +718,8 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
             "description": "Animated light-mode terminal profile for Patruxs.",
             "palette": (
                 "--bg:#E8EBEF; --panel:#F7F8FA; --stroke:#C4CAD3; --text:#15191F;\n"
-                "      --muted:#66707D; --portrait:#1F6E5C; --live:#D7263D;"
+                "      --muted:#66707D; --label:#087F8C; --portrait:#1F6E5C;\n"
+                "      --positive:#18794E; --negative:#C21F39; --live:#D7263D;"
             ),
             "portrait": light_layers,
         },
@@ -661,10 +738,14 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     text {{ font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }}
     .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
     .section {{ font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }}
-    .row {{ font-size:14px; dominant-baseline:alphabetic; }}
-    .label {{ fill:var(--muted); }}
+    .info-heading {{ font-size:13px; fill:var(--label); font-weight:700; }}
+    .info-row {{ font-size:12px; dominant-baseline:alphabetic; }}
+    .label {{ fill:var(--label); font-weight:700; }}
     .value {{ fill:var(--text); }}
-    .leader {{ stroke:var(--muted); stroke-opacity:.55; stroke-width:1; stroke-dasharray:1 5; }}
+    .inline-label {{ fill:var(--label); font-weight:700; }}
+    .positive {{ fill:var(--positive); font-weight:700; }}
+    .negative {{ fill:var(--negative); font-weight:700; }}
+    .leader {{ stroke:var(--muted); stroke-opacity:.6; stroke-width:1; stroke-dasharray:1 4; }}
     .live {{ font-size:12px; fill:var(--live); font-weight:700; letter-spacing:1.4px; }}
   </style>
 
@@ -744,8 +825,8 @@ def write_preview_html(dark_svg_name: str, light_svg_name: str) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("image", type=Path, nargs="?", default=Path("assets/portrait.png"))
-    parser.add_argument("--dark-output", type=Path, default=Path("profile-dark.svg"))
-    parser.add_argument("--light-output", type=Path, default=Path("profile-light.svg"))
+    parser.add_argument("--dark-output", type=Path, default=Path("dark.svg"))
+    parser.add_argument("--light-output", type=Path, default=Path("light.svg"))
     parser.add_argument("--metrics", type=Path, default=Path("metrics.json"))
     parser.add_argument("--html", type=Path, default=Path("profile.html"))
     return parser.parse_args()
