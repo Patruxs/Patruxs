@@ -163,6 +163,7 @@ INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
         InfoToken(" )"),
     ),
 )
+INFO_LINE_COLUMNS = 79
 LOGO_MARKS = ("PY", "TS", "DB")
 
 # ---------------------------------------------------------------------------
@@ -606,6 +607,19 @@ def info_rows_svg() -> str:
 
     for line_index, tokens in enumerate(INFO_LINES):
         line_y = y + line_index * row_gap
+        padding = max(
+            INFO_LINE_COLUMNS - sum(len(token.text) for token in tokens),
+            0,
+        )
+        padding_index = next(
+            (
+                index
+                for index in range(len(tokens) - 1, -1, -1)
+                if tokens[index].class_name == "cc"
+                and ("." in tokens[index].text or "-" in tokens[index].text)
+            ),
+            -1,
+        ) if len(tokens) > 1 else -1
         clip_definitions.append(
             f'<clipPath id="lc{line_index}">'
             f'<rect x="496" y="{line_y - 17:.1f}" width="638" height="23"/>'
@@ -621,9 +635,18 @@ def info_rows_svg() -> str:
             element_id = (
                 f' id="{escape(token.element_id)}"' if token.element_id else ""
             )
+            token_text = token.text
+            if token_index == padding_index and padding:
+                fill_character = "-" if "-" in token_text else "."
+                if token_text.endswith(" "):
+                    token_text = (
+                        token_text[:-1] + fill_character * padding + " "
+                    )
+                else:
+                    token_text += fill_character * padding
             spans.append(
                 f'<tspan{position} class="{escape(token.class_name)}"{element_id}>'
-                f'{escape(token.text)}</tspan>'
+                f'{escape(token_text)}</tspan>'
             )
         parts.append(
             f'<g clip-path="url(#lc{line_index})">'
