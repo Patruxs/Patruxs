@@ -25,7 +25,6 @@ from scipy.optimize import linear_sum_assignment
 # ---------------------------------------------------------------------------
 # Public profile data. Edit this block, then rerun the script.
 # ---------------------------------------------------------------------------
-HANDLE = "@PATRUXS"
 PROFILE_ROWS: list[tuple[str, str]] = [
     ("Subject", "PATRICK"),
     ("Role", "BACKEND · FULLSTACK ENGINEER"),
@@ -628,17 +627,14 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     portrait_height = 430.0
     portrait_scale = portrait_height / GRID_H
 
-    pill_width = max(174.0, text_width(HANDLE, 14, bold=True) + 40.0)
-    pill_x = 1142.0 - pill_width
-    live_x = pill_x - 68.0
+    live_x = 1080.0
 
     theme_data = {
         "dark": {
             "description": "Animated dark-mode terminal profile for Patruxs.",
             "palette": (
                 "--bg:#080A0D; --panel:#0D1117; --stroke:#2B313B; --text:#E6EDF3;\n"
-                "      --muted:#7D8998; --portrait:#A8F07A; --accent:#78DCE8;\n"
-                "      --live:#FF4D5A; --pill-text:#071014;"
+                "      --muted:#7D8998; --portrait:#A8F07A; --live:#FF4D5A;"
             ),
             "portrait": dark_layers,
         },
@@ -646,8 +642,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
             "description": "Animated light-mode terminal profile for Patruxs.",
             "palette": (
                 "--bg:#E8EBEF; --panel:#F7F8FA; --stroke:#C4CAD3; --text:#15191F;\n"
-                "      --muted:#66707D; --portrait:#1F6E5C; --accent:#2D6CDF;\n"
-                "      --live:#D7263D; --pill-text:#FFFFFF;"
+                "      --muted:#66707D; --portrait:#1F6E5C; --live:#D7263D;"
             ),
             "portrait": light_layers,
         },
@@ -671,7 +666,6 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     .value {{ fill:var(--text); }}
     .leader {{ stroke:var(--muted); stroke-opacity:.55; stroke-width:1; stroke-dasharray:1 5; }}
     .live {{ font-size:12px; fill:var(--live); font-weight:700; letter-spacing:1.4px; }}
-    .pill {{ font-size:14px; fill:var(--pill-text); font-weight:700; }}
   </style>
 
   <rect width="{WIDTH}" height="{HEIGHT}" rx="18" fill="var(--bg)"/>
@@ -691,15 +685,12 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     <animate attributeName="opacity" values=".35;1;.35" keyTimes="0;.5;1" dur="1.25s" repeatCount="indefinite"/>
   </circle>
   <text x="{live_x + 11:.1f}" y="100" class="live" textLength="34" lengthAdjust="spacingAndGlyphs">LIVE</text>
-  <rect x="{pill_x:.1f}" y="82" width="{pill_width:.1f}" height="27" rx="13.5" fill="var(--accent)"/>
-  <text x="{pill_x + pill_width / 2:.1f}" y="100" text-anchor="middle" class="pill" textLength="{pill_width - 36:.1f}" lengthAdjust="spacingAndGlyphs">{escape(HANDLE)}</text>
 
   <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="crispEdges">
     {data["portrait"]}
     <g id="travellers">{travellers}</g>
   </g>
 
-  <text x="48" y="573" class="window-title" textLength="350" lengthAdjust="spacingAndGlyphs">300×340 · FS/SERPENTINE · 1-BIT · SINGLE-HUE</text>
   {rows}
 </svg>
 '''
