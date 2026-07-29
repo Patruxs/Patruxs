@@ -7,8 +7,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "scripts/fetch_data.py"
-      - "system_info.yaml"
+      - "scripts/generate_profile.py"
+      - "assets/portrait.png"
       - "requirements.txt"
       - ".github/workflows/update-profile.yml"
 
@@ -30,14 +30,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Update banners
-        env:
-          USER_NAME: ${{ github.repository_owner }}
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN || github.token }}
-          BIRTHDAY: ${{ vars.BIRTHDAY }}
+      - name: Generate animated profile
         run: |
           pip install -r requirements.txt
-          python scripts/fetch_data.py
+          python scripts/generate_profile.py assets/portrait.png \
+            --output profile.svg \
+            --metrics metrics.json \
+            --html profile.html
 
       - name: Generate dark cards
         if: github.event_name != 'push'
@@ -87,7 +86,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f assets/dark.svg assets/light.svg cache
+          git add profile.svg metrics.json
           if [ "${{ github.event_name }}" != push ]; then
             git add assets/profile-summary-card-output
           fi

@@ -1,324 +1,105 @@
-# Profile banner guide
+# Animated profile guide
 
-This repository powers the **Patruxs** GitHub profile: dual-theme animated
-banners, live stats, summary cards, and the profile `README.md`.
+This repository powers the Patruxs GitHub profile. The banner is one
+self-contained SVG with an animated dithered portrait, automatic dark and
+light themes, and terminal-style profile details.
 
-Run every command from the **repo root** unless noted.
-
----
+Run every command from the repository root.
 
 ## Repository layout
 
 ```text
 Patruxs/
-├── README.md                      # What GitHub shows on your profile
-├── system_info.yaml               # Static SYSTEM.INFO text (edit this)
+├── README.md
+├── profile.svg
+├── metrics.json
 ├── requirements.txt
-├── .gitignore
-│
 ├── assets/
-│   ├── dark.svg / light.svg       # Theme banners (VISUAL.MAP + SYSTEM.INFO)
-│   ├── portrait.txt               # ASCII portrait source for VISUAL.MAP
+│   ├── portrait.png
+│   ├── animated-divider.gif
 │   └── profile-summary-card-output/
-│       ├── github/                 # Light profile summary cards
-│       └── github_dark/            # Dark profile summary cards
-│
 ├── scripts/
-│   ├── fetch_data.py              # Apply YAML and refresh live GitHub data
-│   ├── ascii_to_svg.py            # portrait.txt → SVG <tspan> block
-│   ├── image_to_ascii.py          # Photo → ASCII portrait
-│   └── README.md
-│
-├── docs/
-│   └── USAGE.md                   # This guide
-│
+│   └── generate_profile.py
 └── .github/workflows/
-    └── update-profile.yml         # Daily banners and summary cards
+    └── update-profile.yml
 ```
 
-Profile assets stay under `assets/` and use paths relative to `README.md`, such
-as `./assets/dark.svg`.
+`profile.svg` contains both color schemes. The SVG chooses its palette through
+`prefers-color-scheme`, so separate dark and light banner files are not needed.
 
----
+## Rebuild the banner
 
-## Quick start
+Install the dependencies once:
 
 ```bash
-# 1. Dependencies (once)
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# 2. Edit static fields
-#    open system_info.yaml
-
-# 3. Apply YAML and refresh live fields
-export ACCESS_TOKEN=ghp_...          # optional, recommended for stats
-python3 scripts/fetch_data.py
-
-# 4. Preview
-#    open assets/dark.svg and assets/light.svg in a browser
-
-# 5. Publish
-git add system_info.yaml assets/dark.svg assets/light.svg
-git commit -m "Update profile banner"
-git push
 ```
 
----
-
-## What is live vs static
-
-| Area | Source | Updates how |
-|------|--------|-------------|
-| **Uptime** | GitHub account `created_at`, or `BIRTHDAY` variable | Daily Action / `fetch_data.py` |
-| **Lang** | Languages across **owned, non-fork** repos (by code size) | Daily Action / `fetch_data.py` |
-| **GitHub Stats** | Repos, contributed repos, stars, commits, followers, LOC | Daily Action / `fetch_data.py` (needs token) |
-| **Subject, Role, Origin, …** | `system_info.yaml` | You edit YAML, then run `fetch_data.py` |
-| **Contact** | `system_info.yaml` | Same |
-| **ASCII portrait** | `assets/portrait.txt` | Manual / `image_to_ascii.py` |
-
-Leave live keys empty in YAML (`Uptime`, `Lang`). `GitHub Stats` is a section
-with `kind: github_stats` - values are filled by `fetch_data.py`, not hand-edited.
-
-### Lang display
-
-Languages are ranked by total bytes, packed into multiple monospaced lines,
-right-justified with filler dots:
-
-```text
-. Lang: ................TypeScript · Java · HTML · CSS
-. .............Python · JavaScript · Go · SCSS · Shell
-. ........................PowerShell · HCL · Batchfile
-. ......................Go Template · PHP · Ruby · Lua
-. ..........................................Dockerfile
-```
-
----
-
-## Edit static SYSTEM.INFO
-
-### 1. Open `system_info.yaml`
-
-Current shape:
-
-```yaml
-host: patruxs@devos
-
-fields:
-  - key: Uptime
-    value: ""                    # live
-
-  - key: Subject
-    value: Patrick
-
-  - key: Role
-    value: Backend Engineer · Fullstack Engineer
-
-  - key: Origin
-    value: Vietnam · Remote
-
-  - key: Education
-    value: Software Engineering
-
-  - key: Status
-    value: Building · Learning · Shipping
-
-  - key: Lang
-    value: ""                    # live - all repo languages
-
-sections:
-  - title: Contact
-    fields:
-      - key: Grid.Mail
-        value: laithuanphat.work@gmail.com
-      - key: Grid.Portfolio
-        value: github.com/Patruxs
-      - key: Grid.LinkedIn
-        value: linkedin.com/in/patruxs
-      - key: Grid.Github
-        value: Patruxs
-
-  - title: GitHub Stats
-    kind: github_stats           # live block
-```
-
-### 2. Apply changes
+Then generate all outputs:
 
 ```bash
-python3 scripts/fetch_data.py
+python3 scripts/generate_profile.py
 ```
 
-This rebuilds the SYSTEM.INFO panel in both theme SVGs and refreshes Uptime + Lang.
+The command reads `assets/portrait.png` and writes:
 
-### Line types
+- `profile.svg` - the profile asset committed to the repository
+- `metrics.json` - deterministic generation and animation diagnostics
+- `profile.html` - a local browser preview ignored by Git
 
-| YAML | Renders as |
-|------|------------|
-| `host:` | Purple terminal header |
-| `key` + `value` | `. Key: ........ Value` (right-justified) |
-| empty `key` and `value` | Blank spacer |
-| `Grid.Mail` (nested key) | `. Grid.Mail: .... value` |
-| `Lang` | Multi-line live language list |
-| `sections[].title` | `- Contact` style header |
-| `kind: github_stats` | Live Repos / Commits / LOC rows |
+Open `profile.html` in a browser to inspect the animation. Check both browser
+color schemes before publishing.
 
-### Add a static row
+## Customize the profile
 
-Under `fields:`:
+Edit the public profile data near the top of
+`scripts/generate_profile.py`:
 
-```yaml
-  - key: Focus
-    value: APIs · Distributed systems
-```
+- `HANDLE`
+- `PROFILE_ROWS`
+- `LOGO_MARKS`
 
-Then run `python3 scripts/fetch_data.py`.
+Replace `assets/portrait.png` to change the portrait. A transparent-background
+PNG produces the cleanest subject mask.
 
----
-
-## Scripts reference
-
-Run from repo root:
-
-| Command | Purpose |
-|---------|---------|
-| `python3 scripts/fetch_data.py` | Full live update (Uptime, Lang, Stats) |
-| `python3 scripts/ascii_to_svg.py` | Build tspans from `assets/portrait.txt` |
-| `python3 scripts/image_to_ascii.py PHOTO -o assets/portrait.txt` | Photo → ASCII |
-
-### `fetch_data.py` environment
-
-| Variable | Required | Meaning |
-|----------|----------|---------|
-| `USER_NAME` | No | GitHub login (default: `Patruxs`) |
-| `ACCESS_TOKEN` | Recommended | PAT for GraphQL stats + private repos |
-| `BIRTHDAY` | No | `YYYY-MM-DD` for Uptime; else account created_at |
-
-Example:
-
-```bash
-export USER_NAME=Patruxs
-export ACCESS_TOKEN=ghp_xxxxxxxx
-export BIRTHDAY=2002-07-05   # optional
-python3 scripts/fetch_data.py
-```
-
-Without `ACCESS_TOKEN`, Uptime and Lang still update (public APIs). GitHub Stats
-need a token for reliable results.
-
----
-
-## ASCII portrait (VISUAL.MAP)
-
-### From existing art
-
-1. Edit `assets/portrait.txt` (monospace ASCII block).
-2. Optionally generate SVG tspans:
-
-```bash
-python3 scripts/ascii_to_svg.py
-# → assets/portrait_tspan.txt
-```
-
-3. Paste/update the portrait `<tspan>` block inside `assets/dark.svg` and `assets/light.svg`
-   (or have an agent do it). `fetch_data.py` does **not** rewrite VISUAL.MAP.
-
-### From a photo
-
-```bash
-python3 scripts/image_to_ascii.py path/to/photo.jpg -o assets/portrait.txt
-
-# Useful flags:
-#   --cols 92 --rows 53
-#   --gamma 0.90
-#   --no-crop / --no-dither / --no-subject-aware
-```
-
-Then open `assets/portrait.txt`, tweak if needed, and re-embed into the SVGs.
-
----
+After either change, regenerate and review `profile.html`.
 
 ## GitHub Actions
 
-### Workflows
+The `Update profile` workflow:
 
-| Workflow | File | Schedule | What it does |
-|----------|------|----------|--------------|
-| **Update profile** | `update-profile.yml` | Daily 00:00 UTC | Refreshes banners and both summary-card themes, then publishes them to `main` |
+1. Regenerates `profile.svg` and `metrics.json`.
+2. Refreshes both themes of the GitHub profile summary cards on scheduled and
+   manually dispatched runs.
+3. Commits changed generated assets to `main`.
 
-The profile update supports **workflow_dispatch** (manual run from the Actions tab).
+The workflow runs daily at 00:00 UTC and can also be started from the Actions
+tab. The repository must allow GitHub Actions read and write access.
 
-### Secrets and variables
-
-Repo → **Settings → Secrets and variables → Actions**
-
-| Name | Kind | Purpose |
-|------|------|---------|
-| `ACCESS_TOKEN` | Secret | Fine-grained or classic PAT for stats / private languages |
-| `BIRTHDAY` | Variable | Optional Uptime start date (`YYYY-MM-DD`) |
-
-Also set **Actions → General → Workflow permissions** to **Read and write**.
-
-Suggested PAT scopes (see comments in `scripts/fetch_data.py`):
-
-- Account: read followers / starring / watching  
-- Repositories: contents, metadata, commit statuses (as needed for LOC)
-
-### Manual profile refresh
-
-**Actions → Update profile → Run workflow**
-
----
+`ACCESS_TOKEN` or `SUMMARY_GITHUB_TOKEN` is optional. When present, it is used
+by the summary-card action; otherwise the workflow uses `github.token`.
 
 ## Profile README
 
-Keep `README.md` at the root. Minimal pattern:
+GitHub renders the root banner with:
 
-```markdown
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
-  <img src="./assets/light.svg" alt="Patruxs"/>
-</picture>
-
-## My stats:
-...
+```html
+<p align="center">
+  <img src="./profile.svg" width="100%" alt="Patruxs animated terminal profile"/>
+</p>
 ```
 
-The special repo name **`USERNAME/USERNAME`** is required for GitHub to show this
-as your profile README.
-
----
-
-## Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-| Package | Used by |
-|---------|---------|
-| `python-dateutil`, `requests`, `lxml` | `fetch_data.py` |
-| `PyYAML` | `fetch_data.py` (optional fallback parser exists) |
-| `numpy`, `Pillow` | `image_to_ascii.py` |
-
----
+The special repository name `USERNAME/USERNAME` is required for GitHub to show
+the repository README on a user profile.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| `ModuleNotFoundError` | `pip install -r requirements.txt` |
-| Banner looks unchanged | Hard-refresh the browser / profile page |
-| GitHub still shows old SVG | Wait ~1 minute; hard-refresh; check Actions succeeded |
-| Stats stay `0` | Add `ACCESS_TOKEN` secret (PAT), re-run workflow |
-| Lang missing languages | Owned **non-fork** repos only; private needs PAT |
-| YAML parse / SVG XML error | Check indentation and quotes in `system_info.yaml` |
-| `python scripts/fetch_data.py` path errors | Run from **repo root**, not from `scripts/` |
-
----
-
-## One-liners
-
-```text
-Banner        ->  edit system_info.yaml  ->  python3 scripts/fetch_data.py  ->  git push
-Portrait      ->  edit assets/portrait.txt (or image_to_ascii.py)  ->  re-embed SVGs
-Daily auto    ->  GitHub Action update-profile.yml (banners + summary cards)
-```
+| `ModuleNotFoundError` | Install `requirements.txt` in the active environment |
+| Portrait clipping looks wrong | Use a transparent PNG with visible head and shoulders |
+| Banner looks unchanged | Rebuild it, then hard-refresh after GitHub updates its image cache |
+| Animation does not run locally | Preview through a browser instead of an editor's static SVG viewer |
+| Summary cards do not refresh | Check workflow permissions and the summary-card action logs |
