@@ -12,6 +12,6 @@ python3 scripts/generate_profile.py
 python3 scripts/fetch_data.py
 ```
 
-This writes the synchronized `dark.svg` and `light.svg` banners,
+This writes the synchronized `assets/dark.svg` and `assets/light.svg` banners,
 `metrics.json`, and the ignored local preview `profile.html`. See
 [docs/USAGE.md](../docs/USAGE.md) for full instructions.

@@ -32,14 +32,14 @@ jobs:
           python-version: "3.12"
 
       - name: Preserve current live statistics
-        run: cp dark.svg "$RUNNER_TEMP/profile-before-generation.svg"
+        run: cp assets/dark.svg "$RUNNER_TEMP/profile-before-generation.svg"
 
       - name: Generate animated profile
         run: |
           pip install -r requirements.txt
           python scripts/generate_profile.py assets/portrait.png \
-            --dark-output dark.svg \
-            --light-output light.svg \
+            --dark-output assets/dark.svg \
+            --light-output assets/light.svg \
             --metrics metrics.json \
             --html profile.html
 
@@ -50,8 +50,8 @@ jobs:
         run: |
           python scripts/fetch_data.py \
             --username "${{ github.repository_owner }}" \
-            --dark-svg dark.svg \
-            --light-svg light.svg \
+            --dark-svg assets/dark.svg \
+            --light-svg assets/light.svg \
             --previous-svg "$RUNNER_TEMP/profile-before-generation.svg" \
             --cards-output assets/profile-summary-card-output
 
@@ -59,7 +59,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dark.svg light.svg metrics.json assets/profile-summary-card-output
+          git add assets/dark.svg assets/light.svg metrics.json assets/profile-summary-card-output
           git diff --staged --quiet && exit 0
           git commit -m "chore: update profile [skip ci]"
           for attempt in 1 2 3; do

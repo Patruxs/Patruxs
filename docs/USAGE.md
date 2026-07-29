@@ -11,11 +11,11 @@ Run every command from the repository root.
 ```text
 Patruxs/
 ├── README.md
-├── dark.svg
-├── light.svg
 ├── metrics.json
 ├── requirements.txt
 ├── assets/
+│   ├── dark.svg
+│   ├── light.svg
 │   ├── portrait.png
 │   ├── animated-divider.gif
 │   └── profile-summary-card-output/
@@ -47,8 +47,8 @@ python3 scripts/generate_profile.py
 
 The command reads `assets/portrait.png` and writes:
 
-- `dark.svg` - the dark profile asset committed to the repository
-- `light.svg` - the light profile asset committed to the repository
+- `assets/dark.svg` - the dark profile asset committed to the repository
+- `assets/light.svg` - the light profile asset committed to the repository
 - `metrics.json` - deterministic generation and animation diagnostics
 - `profile.html` - a local browser preview ignored by Git
 
@@ -93,8 +93,8 @@ GitHub renders the root banner with:
 ```html
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./dark.svg"/>
-    <img src="./light.svg" width="100%" alt="Patruxs animated terminal profile"/>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
+    <img src="./assets/light.svg" width="100%" alt="Patruxs animated terminal profile"/>
   </picture>
 </p>
 ```

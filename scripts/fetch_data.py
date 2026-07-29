@@ -458,8 +458,8 @@ def parse_args() -> argparse.Namespace:
     repository_owner = os.environ.get("GITHUB_REPOSITORY_OWNER", "Patruxs")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--username", default=repository_owner)
-    parser.add_argument("--dark-svg", type=Path, default=Path("dark.svg"))
-    parser.add_argument("--light-svg", type=Path, default=Path("light.svg"))
+    parser.add_argument("--dark-svg", type=Path, default=Path("assets/dark.svg"))
+    parser.add_argument("--light-svg", type=Path, default=Path("assets/light.svg"))
     parser.add_argument(
         "--previous-svg",
         type=Path,

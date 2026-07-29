@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./dark.svg"/>
-    <img src="./light.svg" width="100%" alt="Patruxs animated terminal profile"/>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
+    <img src="./assets/light.svg" width="100%" alt="Patruxs animated terminal profile"/>
   </picture>
 </p>
 

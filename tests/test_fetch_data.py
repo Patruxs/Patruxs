@@ -171,7 +171,7 @@ class ProfileSvgTests(unittest.TestCase):
             self.assertEqual(len(visible), 79)
 
     def test_preserves_line_values_when_statistics_are_unavailable(self) -> None:
-        svg = Path("dark.svg").read_text(encoding="utf-8")
+        svg = Path("assets/dark.svg").read_text(encoding="utf-8")
         stats = ProfileStats("1 day", 11, 12, 0, 576, 2, None, None)
         updated = render_profile_svg(svg, stats)
 
@@ -184,7 +184,7 @@ class ProfileSvgTests(unittest.TestCase):
             self.assertEqual(before.group(1), after.group(1))
 
     def test_restores_last_published_line_values_after_generation(self) -> None:
-        previous = Path("dark.svg").read_text(encoding="utf-8")
+        previous = Path("assets/dark.svg").read_text(encoding="utf-8")
         unavailable = ProfileStats("1 day", 11, 12, 0, 576, 2, None, None)
 
         restored = preserve_line_totals(unavailable, previous)
