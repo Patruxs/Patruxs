@@ -11,7 +11,15 @@
     text { font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }
     .window-title { font-size:13px; fill:var(--muted); letter-spacing:.3px; }
     .section { font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }
-    .terminal-line { font-size:13px; dominant-baseline:alphabetic; }
+    .terminal-line { font-size:16.5px; letter-spacing:-2.05px; dominant-baseline:alphabetic; }
+    g[clip-path="url(#lc9)"] tspan:nth-child(2), g[clip-path="url(#lc9)"] tspan:nth-child(3),
+    g[clip-path="url(#lc10)"] tspan:nth-child(2), g[clip-path="url(#lc10)"] tspan:nth-child(3),
+    g[clip-path="url(#lc11)"] tspan:nth-child(2), g[clip-path="url(#lc11)"] tspan:nth-child(3),
+    g[clip-path="url(#lc12)"] tspan:nth-child(2), g[clip-path="url(#lc12)"] tspan:nth-child(3) { display:none; }
+    g[clip-path="url(#lc9)"] tspan:nth-child(5),
+    g[clip-path="url(#lc11)"] tspan:nth-child(5) { letter-spacing:-1.09px; }
+    g[clip-path="url(#lc10)"] tspan:nth-child(5) { letter-spacing:-1.17px; }
+    g[clip-path="url(#lc12)"] tspan:nth-child(5) { letter-spacing:-1.38px; }
     .key, .accent { fill:var(--label); font-weight:700; }
     .cc { fill:var(--muted); }
     .value { fill:var(--text); }

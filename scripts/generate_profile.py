@@ -84,32 +84,24 @@ INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
     ),
     (
         InfoToken(". "),
-        InfoToken("Grid", "key"),
-        InfoToken("."),
         InfoToken("Mail", "key"),
         InfoToken(": ................... "),
         InfoToken("laithuanphat.work@gmail.com", "value"),
     ),
     (
         InfoToken(". "),
-        InfoToken("Grid", "key"),
-        InfoToken("."),
         InfoToken("Portfolio", "key"),
         InfoToken(": ....................... "),
         InfoToken("github.com/Patruxs", "value"),
     ),
     (
         InfoToken(". "),
-        InfoToken("Grid", "key"),
-        InfoToken("."),
         InfoToken("LinkedIn", "key"),
         InfoToken(": ................... "),
         InfoToken("linkedin.com/in/patruxs", "value"),
     ),
     (
         InfoToken(". "),
-        InfoToken("Grid", "key"),
-        InfoToken("."),
         InfoToken("Github", "key"),
         InfoToken(": ..................................... "),
         InfoToken("Patruxs", "value"),
@@ -842,7 +834,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     text {{ font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }}
     .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
     .section {{ font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }}
-    .terminal-line {{ font-size:13px; dominant-baseline:alphabetic; }}
+    .terminal-line {{ font-size:16.5px; letter-spacing:-2.05px; dominant-baseline:alphabetic; }}
     .key, .accent {{ fill:var(--label); font-weight:700; }}
     .cc {{ fill:var(--muted); }}
     .value {{ fill:var(--text); }}
