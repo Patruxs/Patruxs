@@ -5,7 +5,9 @@
   </picture>
 </p>
 
-## My Stats
+<p align="center">
+  <img src="./assets/animated-divider.gif" width="100%" alt="divider"/>
+</p>
 
 <div align="center">
   <picture>
@@ -33,3 +35,4 @@
     <img src="https://github-readme-activity-graph.vercel.app/graph?username=Patruxs&bg_color=0d1117&color=58a6ff&line=8b949e&point=f7786b&area=true&hide_border=false" alt="GitHub Activity Graph" width="100%"/>
   </picture>
 </p>
+
