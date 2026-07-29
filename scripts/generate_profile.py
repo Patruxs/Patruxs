@@ -600,7 +600,7 @@ def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.nda
 def info_rows_svg() -> str:
     left = 506.0
     y = 128.0
-    row_gap = 22.0
+    row_gap = 25.0
     clip_definitions: list[str] = []
     parts: list[str] = []
 
@@ -608,7 +608,7 @@ def info_rows_svg() -> str:
         line_y = y + line_index * row_gap
         clip_definitions.append(
             f'<clipPath id="lc{line_index}">'
-            f'<rect x="496" y="{line_y - 15:.1f}" width="638" height="20"/>'
+            f'<rect x="496" y="{line_y - 17:.1f}" width="638" height="23"/>'
             '</clipPath>'
         )
         spans: list[str] = []
@@ -787,7 +787,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     text {{ font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }}
     .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
     .section {{ font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }}
-    .terminal-line {{ font-size:11.5px; dominant-baseline:alphabetic; }}
+    .terminal-line {{ font-size:13px; dominant-baseline:alphabetic; }}
     .key, .accent {{ fill:var(--label); font-weight:700; }}
     .cc {{ fill:var(--muted); }}
     .value {{ fill:var(--text); }}
