@@ -918,7 +918,7 @@ def write_preview_html(dark_svg_name: str, light_svg_name: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("image", type=Path, nargs="?", default=Path("assets/portrait.png"))
+    parser.add_argument("image", type=Path)
     parser.add_argument("--dark-output", type=Path, default=Path("assets/dark.svg"))
     parser.add_argument("--light-output", type=Path, default=Path("assets/light.svg"))
     parser.add_argument("--metrics", type=Path, default=Path("metrics.json"))
