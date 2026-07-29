@@ -20,6 +20,7 @@ Patruxs/
 │   ├── animated-divider.gif
 │   └── profile-summary-card-output/
 ├── scripts/
+│   ├── fetch_data.py
 │   └── generate_profile.py
 └── .github/workflows/
     └── update-profile.yml
@@ -72,15 +73,16 @@ After either change, regenerate and review `profile.html`.
 The `Update profile` workflow:
 
 1. Regenerates both profile SVGs and `metrics.json`.
-2. Refreshes both themes of the GitHub profile summary cards on scheduled and
-   manually dispatched runs.
+2. Runs `scripts/fetch_data.py` to refresh the account uptime, every value in
+   the System Info GitHub Stats block, and both themes of the three summary
+   cards displayed by `README.md`.
 3. Commits changed generated assets to `main`.
 
 The workflow runs daily at 00:00 UTC and can also be started from the Actions
 tab. The repository must allow GitHub Actions read and write access.
 
 `ACCESS_TOKEN` or `SUMMARY_GITHUB_TOKEN` is optional. When present, it is used
-by the summary-card action; otherwise the workflow uses `github.token`.
+for GitHub API requests; otherwise the workflow uses `github.token`.
 
 ## Profile README
 
@@ -106,4 +108,4 @@ the repository README on a user profile.
 | Portrait clipping looks wrong | Use a transparent PNG with visible head and shoulders |
 | Banner looks unchanged | Rebuild it, then hard-refresh after GitHub updates its image cache |
 | Animation does not run locally | Preview through a browser instead of an editor's static SVG viewer |
-| Summary cards do not refresh | Check workflow permissions and the summary-card action logs |
+| Summary cards do not refresh | Check workflow permissions and the `Fetch live profile data and summary cards` logs |
