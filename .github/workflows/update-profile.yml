@@ -46,6 +46,7 @@ jobs:
       - name: Fetch live profile data and summary cards
         env:
           GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN || secrets.SUMMARY_GITHUB_TOKEN || github.token }}
+          BIRTHDAY: ${{ vars.BIRTHDAY }}
         run: |
           python scripts/fetch_data.py \
             --username "${{ github.repository_owner }}" \

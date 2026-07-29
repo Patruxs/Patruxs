@@ -35,6 +35,8 @@ CARD_ENDPOINTS = {
 }
 THEMES = ("github", "github_dark")
 LINE_COLUMNS = 79
+LANGUAGE_LIMIT = 4
+LANGUAGE_SEPARATOR = " · "
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,7 @@ class ProfileStats:
     followers: int
     additions: int | None
     deletions: int | None
+    languages: str | None = None
 
     @property
     def lines_of_code(self) -> int | None:
@@ -220,6 +223,52 @@ def fetch_repositories(client: HttpClient, username: str) -> list[dict[str, Any]
         page += 1
 
 
+def format_languages(names: list[str]) -> str:
+    if not names:
+        return "N/A"
+
+    shown = names[:LANGUAGE_LIMIT]
+    value_budget = LINE_COLUMNS - len(". Lang:") - 2
+    while shown:
+        extra = len(names) - len(shown)
+        suffix = f" +{extra}" if extra else ""
+        value = LANGUAGE_SEPARATOR.join(shown) + suffix
+        if len(value) <= value_budget:
+            return value
+        shown.pop()
+    return f"+{len(names)}"
+
+
+def fetch_languages(
+    client: HttpClient,
+    repositories: list[dict[str, Any]],
+) -> str:
+    owned_repositories = [
+        repository for repository in repositories if not repository.get("fork", False)
+    ]
+
+    def repository_languages(repository: dict[str, Any]) -> dict[str, int]:
+        languages = client.get_json(
+            f"{GITHUB_API}/repos/{repository['full_name']}/languages"
+        )
+        if not isinstance(languages, dict):
+            raise ValueError(
+                f"GitHub languages response was not an object for "
+                f"{repository['full_name']}"
+            )
+        return {str(name): int(size) for name, size in languages.items()}
+
+    totals: dict[str, int] = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        language_sets = executor.map(repository_languages, owned_repositories)
+        for languages in language_sets:
+            for name, size in languages.items():
+                totals[name] = totals.get(name, 0) + size
+
+    ranked = sorted(totals, key=lambda name: (-totals[name], name.casefold(), name))
+    return format_languages(ranked)
+
+
 def fetch_line_totals(
     client: HttpClient,
     username: str,
@@ -271,15 +320,26 @@ def fetch_profile_stats(
     username: str,
     card_stats: dict[str, int],
     today: dt.date,
+    birthday: str = "",
 ) -> ProfileStats:
+    start_date: dt.date | None = None
+    if birthday.strip():
+        try:
+            start_date = dt.date.fromisoformat(birthday.strip())
+        except ValueError as error:
+            raise ValueError("BIRTHDAY must use YYYY-MM-DD") from error
+
     user = client.get_json(f"{GITHUB_API}/users/{username}")
     repositories = fetch_repositories(client, username)
     line_totals = fetch_line_totals(client, username, repositories)
+    languages = fetch_languages(client, repositories)
     additions, deletions = line_totals if line_totals is not None else (None, None)
-    created_at = dt.datetime.fromisoformat(user["created_at"].replace("Z", "+00:00"))
+    if start_date is None:
+        created_at = dt.datetime.fromisoformat(user["created_at"].replace("Z", "+00:00"))
+        start_date = created_at.date()
 
     return ProfileStats(
-        uptime=account_age(created_at.date(), today),
+        uptime=account_age(start_date, today),
         repos=int(user["public_repos"]),
         contributed=card_stats["contributed"],
         stars=card_stats["stars"],
@@ -287,6 +347,7 @@ def fetch_profile_stats(
         followers=int(user["followers"]),
         additions=additions,
         deletions=deletions,
+        languages=languages,
     )
 
 
@@ -367,6 +428,8 @@ def render_profile_svg(svg: str, stats: ProfileStats) -> str:
         "commit_data": f"{stats.commits:,}",
         "follower_data": f"{stats.followers:,}",
     }
+    if stats.languages is not None:
+        values["lang_data"] = stats.languages
     if stats.lines_of_code is not None:
         values.update(
             {
@@ -382,6 +445,8 @@ def render_profile_svg(svg: str, stats: ProfileStats) -> str:
         ("star_data", "star_data_dots"),
         ("follower_data", "follower_data_dots"),
     ]
+    if stats.languages is not None:
+        fitted_rows.append(("lang_data", "lang_data_dots"))
     if stats.lines_of_code is not None:
         fitted_rows.append(("loc_data", "loc_data_dots"))
     for anchor_id, dots_id in fitted_rows:
@@ -426,6 +491,7 @@ def main() -> None:
         args.username,
         card_stats,
         dt.datetime.now(dt.timezone.utc).date(),
+        os.environ.get("BIRTHDAY", ""),
     )
     if stats.lines_of_code is None and args.previous_svg:
         stats = preserve_line_totals(
@@ -448,7 +514,8 @@ def main() -> None:
     )
     print(
         f"Uptime: {stats.uptime}; repos: {stats.repos:,}; "
-        f"commits: {stats.commits:,}; LOC: {line_summary}"
+        f"commits: {stats.commits:,}; languages: {stats.languages}; "
+        f"LOC: {line_summary}"
     )
 
 

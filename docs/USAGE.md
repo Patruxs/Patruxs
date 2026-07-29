@@ -83,6 +83,8 @@ tab. The repository must allow GitHub Actions read and write access.
 
 `ACCESS_TOKEN` or `SUMMARY_GITHUB_TOKEN` is optional. When present, it is used
 for GitHub API requests; otherwise the workflow uses `github.token`.
+Set the optional `BIRTHDAY` repository variable to a `YYYY-MM-DD` date when the
+Uptime row should measure from a date other than GitHub account creation.
 
 ## Profile README
 
