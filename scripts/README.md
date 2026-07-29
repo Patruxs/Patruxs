@@ -10,5 +10,6 @@ Run from the repo root:
 python3 scripts/generate_profile.py
 ```
 
-This writes `profile.svg`, `metrics.json`, and the ignored local preview
-`profile.html`. See [docs/USAGE.md](../docs/USAGE.md) for full instructions.
+This writes the synchronized `profile-dark.svg` and `profile-light.svg`
+banners, `metrics.json`, and the ignored local preview `profile.html`. See
+[docs/USAGE.md](../docs/USAGE.md) for full instructions.

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build a self-contained animated GitHub profile SVG from a portrait.
+"""Build synchronized dark and light GitHub profile SVGs from a portrait.
 
-The output is one 1180x610 terminal window with automatic dark/light themes.
-Portrait processing and animation are deterministic so rebuilding the same
-input produces byte-stable geometry and metrics.
+The outputs are 1180x610 terminal windows generated from the same profile data
+and animation geometry. Portrait processing and animation are deterministic so
+rebuilding the same input produces byte-stable geometry and metrics.
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ PROFILE_ROWS: list[tuple[str, str]] = [
     ("Core.Lang", "PYTHON · TYPESCRIPT"),
     ("Core.Frontend", "REACT · NEXT.JS"),
     ("Core.Backend", "FASTAPI · NODE.JS"),
-    ("Core.Database", "POSTGRESQL · REDIS"),
+    ("Core.Database", "POSTGRESQL"),
     ("Core.Infra", "DOCKER · AWS"),
     ("Grid.Mail", "laithuanphat.work@gmail.com"),
     ("Grid.Portfolio", "github.com/Patruxs"),
@@ -611,7 +611,7 @@ def traveller_svg(trajectories: Sequence[np.ndarray]) -> str:
     return "".join(parts)
 
 
-def build_svg(image_path: Path) -> tuple[str, dict[str, object]]:
+def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     image = Image.open(image_path)
     grayscale, mask = preprocess_portrait(image)
     dark_points = portrait_points(grayscale, mask, "dark")
@@ -632,26 +632,36 @@ def build_svg(image_path: Path) -> tuple[str, dict[str, object]]:
     pill_x = 1142.0 - pill_width
     live_x = pill_x - 68.0
 
-    svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+    theme_data = {
+        "dark": {
+            "description": "Animated dark-mode terminal profile for Patruxs.",
+            "palette": (
+                "--bg:#080A0D; --panel:#0D1117; --stroke:#2B313B; --text:#E6EDF3;\n"
+                "      --muted:#7D8998; --portrait:#A8F07A; --accent:#78DCE8;\n"
+                "      --live:#FF4D5A; --pill-text:#071014;"
+            ),
+            "portrait": dark_layers,
+        },
+        "light": {
+            "description": "Animated light-mode terminal profile for Patruxs.",
+            "palette": (
+                "--bg:#E8EBEF; --panel:#F7F8FA; --stroke:#C4CAD3; --text:#15191F;\n"
+                "      --muted:#66707D; --portrait:#1F6E5C; --accent:#2D6CDF;\n"
+                "      --live:#D7263D; --pill-text:#FFFFFF;"
+            ),
+            "portrait": light_layers,
+        },
+    }
+
+    def render_svg(theme: str) -> str:
+        data = theme_data[theme]
+        return f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}" viewBox="0 0 {WIDTH} {HEIGHT}" role="img" aria-labelledby="title description">
   <title id="title">profile.sh --live</title>
-  <desc id="description">Animated terminal profile for Patruxs. Dark and light portraits use 300 by 340 one-bit serpentine Floyd-Steinberg dithering.</desc>
+  <desc id="description">{data["description"]} The portrait uses 300 by 340 one-bit serpentine Floyd-Steinberg dithering.</desc>
   <style>
     :root {{
-      --bg:#080A0D; --panel:#0D1117; --stroke:#2B313B; --text:#E6EDF3;
-      --muted:#7D8998; --portrait:#A8F07A; --accent:#78DCE8;
-      --live:#FF4D5A; --pill-text:#071014;
-    }}
-    .portrait-dark {{ display:inline; }}
-    .portrait-light {{ display:none; }}
-    @media (prefers-color-scheme: light) {{
-      :root {{
-        --bg:#E8EBEF; --panel:#F7F8FA; --stroke:#C4CAD3; --text:#15191F;
-        --muted:#66707D; --portrait:#1F6E5C; --accent:#2D6CDF;
-        --live:#D7263D; --pill-text:#FFFFFF;
-      }}
-      .portrait-dark {{ display:none; }}
-      .portrait-light {{ display:inline; }}
+      {data["palette"]}
     }}
     text {{ font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }}
     .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
@@ -685,8 +695,7 @@ def build_svg(image_path: Path) -> tuple[str, dict[str, object]]:
   <text x="{pill_x + pill_width / 2:.1f}" y="100" text-anchor="middle" class="pill" textLength="{pill_width - 36:.1f}" lengthAdjust="spacingAndGlyphs">{escape(HANDLE)}</text>
 
   <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="crispEdges">
-    {dark_layers}
-    {light_layers}
+    {data["portrait"]}
     <g id="travellers">{travellers}</g>
   </g>
 
@@ -694,6 +703,7 @@ def build_svg(image_path: Path) -> tuple[str, dict[str, object]]:
   {rows}
 </svg>
 '''
+    svgs = {theme: render_svg(theme) for theme in theme_data}
 
     metrics: dict[str, object] = {
         "canvas": {"width": WIDTH, "height": HEIGHT},
@@ -713,10 +723,10 @@ def build_svg(image_path: Path) -> tuple[str, dict[str, object]]:
         "dark": asdict(dark_metrics),
         "light": asdict(light_metrics),
     }
-    return svg, metrics
+    return svgs, metrics
 
 
-def write_preview_html(svg_name: str) -> str:
+def write_preview_html(dark_svg_name: str, light_svg_name: str) -> str:
     return f'''<!doctype html>
 <html lang="en">
 <head>
@@ -730,7 +740,12 @@ def write_preview_html(svg_name: str) -> str:
   @media(prefers-color-scheme:light){{html,body{{background:#D8DCE2}}}}
 </style>
 </head>
-<body><img src="{escape(svg_name)}" alt="Animated GitHub profile"></body>
+<body>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="{escape(dark_svg_name)}">
+    <img src="{escape(light_svg_name)}" alt="Animated GitHub profile">
+  </picture>
+</body>
 </html>
 '''
 
@@ -738,7 +753,8 @@ def write_preview_html(svg_name: str) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("image", type=Path, nargs="?", default=Path("assets/portrait.png"))
-    parser.add_argument("--output", type=Path, default=Path("profile.svg"))
+    parser.add_argument("--dark-output", type=Path, default=Path("profile-dark.svg"))
+    parser.add_argument("--light-output", type=Path, default=Path("profile-light.svg"))
     parser.add_argument("--metrics", type=Path, default=Path("metrics.json"))
     parser.add_argument("--html", type=Path, default=Path("profile.html"))
     return parser.parse_args()
@@ -746,13 +762,21 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    svg, metrics = build_svg(args.image)
-    args.output.write_text(svg, encoding="utf-8")
-    metrics["svg_bytes"] = args.output.stat().st_size
+    svgs, metrics = build_svgs(args.image)
+    outputs = {"dark": args.dark_output, "light": args.light_output}
+    for theme, output in outputs.items():
+        output.write_text(svgs[theme], encoding="utf-8")
+    metrics["svg_bytes"] = {
+        theme: output.stat().st_size for theme, output in outputs.items()
+    }
     args.metrics.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
-    args.html.write_text(write_preview_html(args.output.name), encoding="utf-8")
+    args.html.write_text(
+        write_preview_html(args.dark_output.name, args.light_output.name),
+        encoding="utf-8",
+    )
 
-    print(f"Wrote {args.output} ({args.output.stat().st_size / 1024:.1f} KiB)")
+    for theme, output in outputs.items():
+        print(f"Wrote {output} ({output.stat().st_size / 1024:.1f} KiB, {theme})")
     for mode in ("dark", "light"):
         data = metrics[mode]
         print(

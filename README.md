@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="./profile.svg" width="100%" alt="Patruxs animated terminal profile"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./profile-dark.svg"/>
+    <img src="./profile-light.svg" width="100%" alt="Patruxs animated terminal profile"/>
+  </picture>
 </p>
 
 ## My Stats

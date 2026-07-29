@@ -1,8 +1,8 @@
 # Animated profile guide
 
-This repository powers the Patruxs GitHub profile. The banner is one
-self-contained SVG with an animated dithered portrait, automatic dark and
-light themes, and terminal-style profile details.
+This repository powers the Patruxs GitHub profile. The synchronized dark and
+light banners are self-contained SVGs with an animated dithered portrait and
+terminal-style profile details.
 
 Run every command from the repository root.
 
@@ -11,7 +11,8 @@ Run every command from the repository root.
 ```text
 Patruxs/
 ├── README.md
-├── profile.svg
+├── profile-dark.svg
+├── profile-light.svg
 ├── metrics.json
 ├── requirements.txt
 ├── assets/
@@ -24,8 +25,8 @@ Patruxs/
     └── update-profile.yml
 ```
 
-`profile.svg` contains both color schemes. The SVG chooses its palette through
-`prefers-color-scheme`, so separate dark and light banner files are not needed.
+Both profile SVGs are produced by one generator run from the same profile data
+and animation model. Only their palette and portrait treatment differ.
 
 ## Rebuild the banner
 
@@ -45,7 +46,8 @@ python3 scripts/generate_profile.py
 
 The command reads `assets/portrait.png` and writes:
 
-- `profile.svg` - the profile asset committed to the repository
+- `profile-dark.svg` - the dark profile asset committed to the repository
+- `profile-light.svg` - the light profile asset committed to the repository
 - `metrics.json` - deterministic generation and animation diagnostics
 - `profile.html` - a local browser preview ignored by Git
 
@@ -70,7 +72,7 @@ After either change, regenerate and review `profile.html`.
 
 The `Update profile` workflow:
 
-1. Regenerates `profile.svg` and `metrics.json`.
+1. Regenerates both profile SVGs and `metrics.json`.
 2. Refreshes both themes of the GitHub profile summary cards on scheduled and
    manually dispatched runs.
 3. Commits changed generated assets to `main`.
@@ -87,7 +89,10 @@ GitHub renders the root banner with:
 
 ```html
 <p align="center">
-  <img src="./profile.svg" width="100%" alt="Patruxs animated terminal profile"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./profile-dark.svg"/>
+    <img src="./profile-light.svg" width="100%" alt="Patruxs animated terminal profile"/>
+  </picture>
 </p>
 ```
 
