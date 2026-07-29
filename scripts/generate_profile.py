@@ -164,7 +164,7 @@ INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
     ),
 )
 INFO_LINE_COLUMNS = 79
-LOGO_MARKS = ("PY", "TS", "DB")
+LOGO_MARKS = ("React", "Java", "Database")
 
 # ---------------------------------------------------------------------------
 # Fixed design/animation contract.
@@ -488,14 +488,46 @@ def points_to_path(points: np.ndarray, dot: float = 1.0) -> str:
 def raster_logo(mark: str) -> np.ndarray:
     canvas = Image.new("L", (GRID_W, GRID_H), 0)
     draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle((66, 78, 234, 246), radius=34, outline=255, width=13)
-    font_size = 94 if len(mark) <= 2 else 72
-    font = load_font(font_size, bold=True)
-    bbox = draw.textbbox((0, 0), mark, font=font)
-    text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    x = GRID_W / 2 - text_w / 2 - bbox[0]
-    y = 162 - text_h / 2 - bbox[1]
-    draw.text((x, y), mark, font=font, fill=255)
+
+    if mark == "React":
+        ring_box = (72, 124, 228, 200)
+        for angle in (0, 60, 120):
+            ring = Image.new("L", (GRID_W, GRID_H), 0)
+            ImageDraw.Draw(ring).ellipse(ring_box, outline=255, width=8)
+            canvas = Image.fromarray(
+                np.maximum(
+                    np.asarray(canvas),
+                    np.asarray(
+                        ring.rotate(
+                            angle,
+                            resample=Image.Resampling.BICUBIC,
+                            center=(150, 162),
+                        )
+                    ),
+                )
+            )
+        draw = ImageDraw.Draw(canvas)
+        draw.ellipse((139, 151, 161, 173), fill=255)
+    elif mark == "Java":
+        # Steam, cup, handle, and saucer form a compact Java coffee mark.
+        draw.arc((105, 72, 165, 151), 275, 82, fill=255, width=8)
+        draw.arc((135, 82, 190, 157), 96, 260, fill=255, width=8)
+        draw.arc((113, 96, 174, 166), 280, 78, fill=255, width=7)
+        draw.line((94, 159, 198, 159), fill=255, width=9)
+        draw.arc((95, 137, 205, 225), 0, 180, fill=255, width=10)
+        draw.arc((181, 164, 225, 207), 255, 105, fill=255, width=9)
+        draw.arc((78, 203, 222, 238), 2, 178, fill=255, width=9)
+        draw.arc((92, 217, 208, 246), 2, 178, fill=255, width=7)
+    elif mark == "Database":
+        draw.ellipse((79, 91, 221, 145), outline=255, width=10)
+        draw.line((79, 118, 79, 224), fill=255, width=10)
+        draw.line((221, 118, 221, 224), fill=255, width=10)
+        draw.arc((79, 125, 221, 179), 0, 180, fill=255, width=10)
+        draw.arc((79, 169, 221, 223), 0, 180, fill=255, width=10)
+        draw.arc((79, 197, 221, 251), 0, 180, fill=255, width=10)
+    else:
+        raise ValueError(f"Unknown logo {mark!r}")
+
     return np.asarray(canvas) > 127
 
 

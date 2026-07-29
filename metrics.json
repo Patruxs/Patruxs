@@ -42,9 +42,9 @@
   "drift_bands": 94,
   "travellers": 900,
   "logos": [
-    "PY",
-    "TS",
-    "DB"
+    "React",
+    "Java",
+    "Database"
   ],
   "dark": {
     "portrait_dots": 16994,
@@ -61,7 +61,7 @@
     "loop_path_bytes": 262702
   },
   "svg_bytes": {
-    "dark": 1145491,
-    "light": 1209163
+    "dark": 1147556,
+    "light": 1211228
   }
 }
