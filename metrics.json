@@ -1,0 +1,67 @@
+{
+  "canvas": {
+    "width": 1180,
+    "height": 610
+  },
+  "grid": {
+    "width": 300,
+    "height": 340
+  },
+  "intro": {
+    "seconds": 3.2,
+    "groups": 60
+  },
+  "loop": {
+    "seconds": 14.2,
+    "key_times_seconds": [
+      0.0,
+      3.0,
+      4.3,
+      6.3,
+      7.6,
+      9.6,
+      10.9,
+      12.9,
+      14.2
+    ],
+    "key_times_normalized": [
+      0.0,
+      0.211268,
+      0.302817,
+      0.443662,
+      0.535211,
+      0.676056,
+      0.767606,
+      0.908451,
+      1.0
+    ],
+    "portrait_hold_seconds": 3.0,
+    "logo_hold_seconds": 2.0,
+    "transition_seconds": 1.3
+  },
+  "drift_bands": 94,
+  "travellers": 900,
+  "logos": [
+    "React",
+    "Java",
+    "Database"
+  ],
+  "dark": {
+    "portrait_dots": 16994,
+    "intro_evenness": 0.013172417291418005,
+    "straight_boundary": 0.004586154182135838,
+    "intro_path_bytes": 257275,
+    "loop_path_bytes": 205691
+  },
+  "light": {
+    "portrait_dots": 16989,
+    "intro_evenness": 0.013727137711682555,
+    "straight_boundary": 0.0,
+    "intro_path_bytes": 263368,
+    "loop_path_bytes": 262702
+  },
+  "svg_bytes": {
+    "dark": 1147556,
+    "light": 1211228
+  }
+}

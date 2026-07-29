@@ -2,18 +2,16 @@
 
 | Script | Purpose |
 |--------|---------|
-| `today.py` | Live refresh: Uptime, Lang, GitHub Stats -> `assets/dark.svg` / `assets/light.svg` |
-| `update_system_info.py` | Apply `system_info.yaml` structure + light live fill |
-| `ascii_to_svg.py` | `assets/portrait.txt` → SVG tspans |
-| `image_to_ascii.py` | Photo → ASCII portrait |
+| `generate_profile.py` | Build the self-contained animated profile from `assets/portrait.png` |
+| `fetch_data.py` | Refresh live System Info values and the summary cards used by `README.md` |
 
-Run from the **repo root**:
+Run from the repo root:
 
 ```bash
-python3 scripts/today.py
-python3 scripts/update_system_info.py
-python3 scripts/ascii_to_svg.py
-python3 scripts/image_to_ascii.py photo.jpg -o assets/portrait.txt
+python3 scripts/generate_profile.py
+python3 scripts/fetch_data.py
 ```
 
-See [docs/USAGE.md](../docs/USAGE.md) for full docs.
+This writes the synchronized `assets/dark.svg` and `assets/light.svg` banners,
+`metrics.json`, and the ignored local preview `profile.html`. See
+[docs/USAGE.md](../docs/USAGE.md) for full instructions.

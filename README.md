@@ -1,7 +1,9 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
-  <img src="./assets/light.svg" width="100%" alt="Patruxs"/>
-</picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
+    <img src="./assets/light.svg" width="100%" alt="Patruxs animated terminal profile"/>
+  </picture>
+</p>
 
 ## My Stats
 

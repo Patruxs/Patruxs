@@ -1,0 +1,69 @@
+name: Update profile
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/generate_profile.py"
+      - "scripts/fetch_data.py"
+      - "assets/portrait.png"
+      - "requirements.txt"
+      - ".github/workflows/update-profile.yml"
+
+concurrency: update-profile
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Preserve current live statistics
+        run: cp assets/dark.svg "$RUNNER_TEMP/profile-before-generation.svg"
+
+      - name: Generate animated profile
+        run: |
+          pip install -r requirements.txt
+          python scripts/generate_profile.py assets/portrait.png \
+            --dark-output assets/dark.svg \
+            --light-output assets/light.svg \
+            --metrics metrics.json \
+            --html profile.html
+
+      - name: Fetch live profile data and summary cards
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN || secrets.SUMMARY_GITHUB_TOKEN || github.token }}
+          BIRTHDAY: ${{ vars.BIRTHDAY }}
+        run: |
+          python scripts/fetch_data.py \
+            --username "${{ github.repository_owner }}" \
+            --dark-svg assets/dark.svg \
+            --light-svg assets/light.svg \
+            --previous-svg "$RUNNER_TEMP/profile-before-generation.svg" \
+            --cards-output assets/profile-summary-card-output
+
+      - name: Commit updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/dark.svg assets/light.svg metrics.json assets/profile-summary-card-output
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: update profile [skip ci]"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
