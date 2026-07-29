@@ -16,7 +16,6 @@ Patruxs/
 ├── assets/
 │   ├── dark.svg
 │   ├── light.svg
-│   ├── portrait.png
 │   ├── animated-divider.gif
 │   └── profile-summary-card-output/
 ├── scripts/
@@ -39,13 +38,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Then generate all outputs:
+Then generate all outputs from a local image:
 
 ```bash
-python3 scripts/generate_profile.py
+python3 scripts/generate_profile.py /path/to/portrait.png
 ```
 
-The command reads `assets/portrait.png` and writes:
+The input image remains local and is not committed. The command writes:
 
 - `assets/dark.svg` - the dark profile asset committed to the repository
 - `assets/light.svg` - the light profile asset committed to the repository
@@ -63,7 +62,7 @@ Edit the public profile data near the top of
 - `INFO_LINES`
 - `LOGO_MARKS`
 
-Replace `assets/portrait.png` to change the portrait. A transparent-background
+Pass a different local image to change the portrait. A transparent-background
 PNG produces the cleanest subject mask.
 
 After either change, regenerate and review `profile.html`.
@@ -72,11 +71,10 @@ After either change, regenerate and review `profile.html`.
 
 The `Update profile` workflow:
 
-1. Regenerates both profile SVGs and `metrics.json`.
-2. Runs `scripts/fetch_data.py` to refresh the account uptime, every value in
+1. Runs `scripts/fetch_data.py` to refresh the account uptime, every value in
    the System Info GitHub Stats block, and both themes of the three summary
    cards displayed by `README.md`.
-3. Commits changed generated assets to `main`.
+2. Commits changed profile assets to `main`.
 
 The workflow runs daily at 00:00 UTC and can also be started from the Actions
 tab. The repository must allow GitHub Actions read and write access.

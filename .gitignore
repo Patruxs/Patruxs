@@ -9,6 +9,5 @@ venv/
 cache/
 assets/portrait_tspan.txt
 *.png
-!assets/portrait.png
 profile.html
 .DS_Store
