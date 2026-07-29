@@ -34,10 +34,6 @@ class InfoToken:
 
 INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
     (
-        InfoToken("patruxs@devos", "head"),
-        InfoToken(" -------------------------------------------------"),
-    ),
-    (
         InfoToken(". "),
         InfoToken("Uptime", "key"),
         InfoToken(":"),
@@ -792,7 +788,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
     .section {{ font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }}
     .terminal-line {{ font-size:11.5px; dominant-baseline:alphabetic; }}
-    .head, .key, .accent {{ fill:var(--label); font-weight:700; }}
+    .key, .accent {{ fill:var(--label); font-weight:700; }}
     .cc {{ fill:var(--muted); }}
     .value {{ fill:var(--text); }}
     .addColor {{ fill:var(--positive); font-weight:700; }}
