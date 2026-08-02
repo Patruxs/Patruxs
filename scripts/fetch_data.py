@@ -197,13 +197,23 @@ def download_cards(
         for filename, endpoint in CARD_ENDPOINTS.items():
             query = urllib.parse.urlencode({"username": username, "theme": theme})
             url = f"{CARD_API}/{endpoint}?{query}"
-            svg = client.get(url, accept="image/svg+xml")
-            ET.fromstring(svg)
-            if "<svg" not in svg or "Something went wrong" in svg:
-                raise ValueError(f"Card service returned an invalid {theme}/{filename}")
-            downloads[theme_directory / filename] = svg
-            if theme == "github" and filename == "3-stats.svg":
-                light_stats = svg
+            try:
+                svg = client.get(url, accept="image/svg+xml")
+                ET.fromstring(svg)
+                if "<svg" not in svg or "Something went wrong" in svg:
+                    raise ValueError(f"Card service returned an invalid {theme}/{filename}")
+                downloads[theme_directory / filename] = svg
+                if theme == "github" and filename == "3-stats.svg":
+                    light_stats = svg
+            except Exception as e:
+                print(f"Warning: Failed to download {filename} for {theme}: {e}", file=sys.stderr)
+                if theme == "github" and filename == "3-stats.svg":
+                    fallback_path = theme_directory / filename
+                    if fallback_path.exists():
+                        print(f"Using fallback for {filename}", file=sys.stderr)
+                        light_stats = fallback_path.read_text(encoding="utf-8")
+                    else:
+                        raise ValueError("No fallback available for 3-stats.svg") from e
     return parse_card_stats(light_stats), downloads
 
 
