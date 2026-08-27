@@ -3,8 +3,9 @@
 
 The script intentionally uses only Python's standard library. It downloads the
 three cards displayed by README.md for both color themes, reads the shared
-GitHub statistics from the stats card, computes repository line totals through
-GitHub's contributor statistics API, and updates both generated profile SVGs.
+GitHub statistics from the stats card, reads the exact commit total from the
+contributions API, computes repository line totals through GitHub's contributor
+statistics API, and updates both generated profile SVGs.
 """
 from __future__ import annotations
 
@@ -63,7 +64,7 @@ class HttpClient:
         self.token = token
         self.retries = retries
 
-    def get(self, url: str, accept: str = "application/vnd.github+json") -> str:
+    def _headers(self, accept: str) -> dict[str, str]:
         headers = {
             "Accept": accept,
             "User-Agent": "Patruxs-profile-updater",
@@ -71,11 +72,12 @@ class HttpClient:
         }
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
+        return headers
 
+    def _send(self, request: urllib.request.Request, url: str) -> str:
         last_error: Exception | None = None
         for attempt in range(self.retries):
             try:
-                request = urllib.request.Request(url, headers=headers)
                 with urllib.request.urlopen(request, timeout=45) as response:
                     return response.read().decode("utf-8")
             except urllib.error.HTTPError as error:
@@ -90,8 +92,29 @@ class HttpClient:
                     time.sleep(2**attempt)
         raise RuntimeError(f"Could not fetch {url}: {last_error}") from last_error
 
+    def get(self, url: str, accept: str = "application/vnd.github+json") -> str:
+        request = urllib.request.Request(url, headers=self._headers(accept))
+        return self._send(request, url)
+
     def get_json(self, url: str) -> Any:
         return json.loads(self.get(url))
+
+    def graphql(self, query: str, variables: dict[str, Any]) -> Any:
+        if not self.token:
+            raise RuntimeError("The GraphQL API requires a GitHub token")
+        url = f"{GITHUB_API}/graphql"
+        headers = self._headers("application/vnd.github+json")
+        headers["Content-Type"] = "application/json"
+        request = urllib.request.Request(
+            url,
+            data=json.dumps({"query": query, "variables": variables}).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        payload = json.loads(self._send(request, url))
+        if payload.get("errors"):
+            raise RuntimeError(f"GraphQL request failed: {payload['errors']}")
+        return payload["data"]
 
 
 def _anniversary(start: dt.date, year: int) -> dt.date:
@@ -146,7 +169,6 @@ def parse_card_stats(svg: str) -> dict[str, int]:
     ]
     labels = {
         "Total Stars:": "stars",
-        "Total Commits:": "commits",
         "Contributed to:": "contributed",
     }
     values: dict[str, int] = {}
@@ -156,20 +178,26 @@ def parse_card_stats(svg: str) -> dict[str, int]:
         if not key:
             continue
 
-        candidates = []
+        # Values sit on the same baseline as their label. Only fall back to
+        # document order when the card carries no coordinates at all, so a
+        # value we cannot read never silently borrows another row's number.
         if y_position is not None:
-            candidates.extend(
+            candidates = [
                 candidate
                 for candidate, candidate_y in texts
                 if candidate_y == y_position and candidate != text
-            )
-        candidates.extend(candidate for candidate, _ in texts[index + 1 :])
+            ]
+        else:
+            candidates = [candidate for candidate, _ in texts[index + 1 :]]
         match = next(
             (candidate for candidate in candidates if re.fullmatch(r"[\d,]+", candidate)),
             None,
         )
         if match is None:
-            raise ValueError(f"Summary card has no numeric value for {text}")
+            raise ValueError(
+                f"Summary card has no exact numeric value for {text}: {candidates}. "
+                f"Abbreviated values such as '1.2k' cannot be used."
+            )
         values[key] = int(match.replace(",", ""))
 
     missing = set(labels.values()) - values.keys()
@@ -325,6 +353,48 @@ def fetch_line_totals(
     return sum(item[0] for item in totals), sum(item[1] for item in totals)
 
 
+COMMIT_TOTALS_QUERY = """
+query($login: String!, $from: DateTime!, $to: DateTime!) {
+  user(login: $login) {
+    contributionsCollection(from: $from, to: $to) {
+      totalCommitContributions
+    }
+  }
+}
+"""
+
+
+def fetch_commit_total(
+    client: HttpClient,
+    username: str,
+    start: dt.date,
+    today: dt.date,
+) -> int:
+    """Sum commit contributions year by year.
+
+    The summary card abbreviates totals past a thousand ("1.2k"), so the exact
+    figure is read from the same contributions API the card itself is built on.
+    A contributions window may not span more than a year, hence the loop.
+    """
+    total = 0
+    for year in range(start.year, today.year + 1):
+        window_start = max(start, dt.date(year, 1, 1))
+        window_end = min(today, dt.date(year, 12, 31))
+        if window_start > window_end:
+            continue
+        data = client.graphql(
+            COMMIT_TOTALS_QUERY,
+            {
+                "login": username,
+                "from": f"{window_start.isoformat()}T00:00:00Z",
+                "to": f"{window_end.isoformat()}T23:59:59Z",
+            },
+        )
+        contributions = data["user"]["contributionsCollection"]
+        total += int(contributions["totalCommitContributions"])
+    return total
+
+
 def fetch_profile_stats(
     client: HttpClient,
     username: str,
@@ -344,16 +414,20 @@ def fetch_profile_stats(
     line_totals = fetch_line_totals(client, username, repositories)
     languages = fetch_languages(client, repositories)
     additions, deletions = line_totals if line_totals is not None else (None, None)
+    created_at = dt.datetime.fromisoformat(user["created_at"].replace("Z", "+00:00"))
+    account_start = created_at.date()
     if start_date is None:
-        created_at = dt.datetime.fromisoformat(user["created_at"].replace("Z", "+00:00"))
-        start_date = created_at.date()
+        start_date = account_start
+    # Count from the account's real creation date; a BIRTHDAY override only
+    # shapes the Uptime row and would otherwise query decades of empty years.
+    commits = fetch_commit_total(client, username, account_start, today)
 
     return ProfileStats(
         uptime=account_age(start_date, today),
         repos=int(user["public_repos"]),
         contributed=card_stats["contributed"],
         stars=card_stats["stars"],
-        commits=card_stats["commits"],
+        commits=commits,
         followers=int(user["followers"]),
         additions=additions,
         deletions=deletions,

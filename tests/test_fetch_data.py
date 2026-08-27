@@ -11,6 +11,7 @@ from scripts.fetch_data import (
     HttpClient,
     ProfileStats,
     account_age,
+    fetch_commit_total,
     fetch_languages,
     fetch_line_totals,
     fetch_profile_stats,
@@ -72,6 +73,13 @@ class AccountAgeTests(unittest.TestCase):
                     return []
                 raise AssertionError(url)
 
+            def graphql(self, _query: str, _variables: dict[str, object]) -> object:
+                return {
+                    "user": {
+                        "contributionsCollection": {"totalCommitContributions": 0}
+                    }
+                }
+
         with patch("scripts.fetch_data.fetch_line_totals", return_value=(1, 0)):
             stats = fetch_profile_stats(
                 Client(),
@@ -102,15 +110,70 @@ class CardStatsTests(unittest.TestCase):
     def test_reads_values_by_label_instead_of_position(self) -> None:
         card = """
         <svg xmlns="http://www.w3.org/2000/svg">
-          <text>Total Commits:</text><text>612</text>
           <text>Total Stars:</text><text>9</text>
           <text>Contributed to:</text><text>14</text>
         </svg>
         """
 
+        self.assertEqual(parse_card_stats(card), {"stars": 9, "contributed": 14})
+
+    def test_reads_values_from_the_row_they_share_with_their_label(self) -> None:
+        card = """
+        <svg xmlns="http://www.w3.org/2000/svg">
+          <text y="14">Total Stars:</text>
+          <text y="39.2">Total Commits:</text>
+          <text y="114.8">Contributed to:</text>
+          <text y="14">9</text>
+          <text y="39.2">612</text>
+          <text y="114.8">14</text>
+        </svg>
+        """
+
+        self.assertEqual(parse_card_stats(card), {"stars": 9, "contributed": 14})
+
+    def test_rejects_abbreviated_values_instead_of_borrowing_another_row(self) -> None:
+        card = """
+        <svg xmlns="http://www.w3.org/2000/svg">
+          <text y="14">Total Stars:</text>
+          <text y="114.8">Contributed to:</text>
+          <text y="14">1.2k</text>
+          <text y="114.8">15</text>
+        </svg>
+        """
+
+        with self.assertRaisesRegex(ValueError, "Total Stars:"):
+            parse_card_stats(card)
+
+
+class CommitTotalTests(unittest.TestCase):
+    def test_sums_contributions_across_every_year_since_the_account_opened(self) -> None:
+        windows: list[tuple[str, str]] = []
+
+        class Client:
+            def graphql(self, _query: str, variables: dict[str, str]) -> object:
+                windows.append((variables["from"], variables["to"]))
+                totals = {"2025": 235, "2026": 1131}
+                year = variables["from"][:4]
+                return {
+                    "user": {
+                        "contributionsCollection": {
+                            "totalCommitContributions": totals.get(year, 0)
+                        }
+                    }
+                }
+
+        total = fetch_commit_total(
+            Client(), "Patruxs", dt.date(2024, 9, 7), dt.date(2026, 8, 27)
+        )
+
+        self.assertEqual(total, 1366)
         self.assertEqual(
-            parse_card_stats(card),
-            {"commits": 612, "stars": 9, "contributed": 14},
+            windows,
+            [
+                ("2024-09-07T00:00:00Z", "2024-12-31T23:59:59Z"),
+                ("2025-01-01T00:00:00Z", "2025-12-31T23:59:59Z"),
+                ("2026-01-01T00:00:00Z", "2026-08-27T23:59:59Z"),
+            ],
         )
 
 
