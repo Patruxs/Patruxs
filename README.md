@@ -11,8 +11,6 @@ Vibe coding is dead — the real ones aura code.
 
 <a href="https://patruxs.github.io/portfolio"><kbd>&nbsp;&nbsp; 🌐 &nbsp;Open Portfolio &nbsp;&nbsp;</kbd></a>
 
-<sub>🔗 <code>patruxs.github.io/portfolio</code></sub>
-
 <br clear="all"/>
 
 <p align="center">
