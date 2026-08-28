@@ -1,7 +1,7 @@
 <a href="https://patruxs.github.io/portfolio">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./assets/portfolio-avatar-dark.svg"/>
-    <img align="left" width="220" src="./assets/portfolio-avatar-light.svg" alt="Patrick"/>
+    <img align="left" width="240" src="./assets/portfolio-avatar-light.svg" alt="Patrick"/>
   </picture>
 </a>
 
