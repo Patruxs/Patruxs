@@ -1,21 +1,19 @@
-<table align="center">
-  <tr>
-    <td align="center" width="220">
-      <a href="https://patruxs.github.io/portfolio">
-        <h1>🧑‍💻</h1>
-        <b>Patrick</b>
-      </a>
-    </td>
-    <td width="520">
-      <h3><a href="https://patruxs.github.io/portfolio">My Portfolio ↗</a></h3>
-      <p>Vibe coding is dead — the real ones aura code.</p>
-      <p>
-        <a href="https://patruxs.github.io/portfolio"><kbd>&nbsp;&nbsp; 🌐 &nbsp;Open Portfolio &nbsp;&nbsp;</kbd></a>
-      </p>
-      <sub>🔗 <code>patruxs.github.io/portfolio</code></sub>
-    </td>
-  </tr>
-</table>
+<a href="https://patruxs.github.io/portfolio">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/portfolio-avatar-dark.svg"/>
+    <img align="left" width="220" src="./assets/portfolio-avatar-light.svg" alt="Patrick"/>
+  </picture>
+</a>
+
+<h3><a href="https://patruxs.github.io/portfolio">My Portfolio ↗</a></h3>
+
+Vibe coding is dead — the real ones aura code.
+
+<a href="https://patruxs.github.io/portfolio"><kbd>&nbsp;&nbsp; 🌐 &nbsp;Open Portfolio &nbsp;&nbsp;</kbd></a>
+
+<sub>🔗 <code>patruxs.github.io/portfolio</code></sub>
+
+<br clear="all"/>
 
 <p align="center">
   <img src="./assets/animated-divider.gif" width="100%" alt="divider"/>
