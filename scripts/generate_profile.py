@@ -161,7 +161,7 @@ INTRO_GROUPS = 60
 DRIFT_BANDS = 94
 TRAVELLERS = 3500
 TRAVELLER_DOT = 2.6
-PORTRAIT_DOT = 1.7
+PORTRAIT_DOT = 2
 INTRO_SECONDS = 3.2
 PORTRAIT_HOLD_SECONDS = 3.0
 LOGO_HOLD_SECONDS = 2.0
@@ -867,7 +867,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
 
   <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="crispEdges">
     {data["portrait"]}
-    <g id="travellers" opacity="0">{travellers}</g>
+    <g id="travellers" opacity="0" shape-rendering="auto">{travellers}</g>
   </g>
 
   {rows}
