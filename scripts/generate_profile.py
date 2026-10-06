@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-"""Build synchronized dark and light GitHub profile SVGs from a portrait.
 
-The outputs are 1180x610 terminal windows generated from the same profile data
-and animation geometry. Portrait processing and animation are deterministic so
-rebuilding the same input produces byte-stable geometry and metrics.
-"""
 from __future__ import annotations
 
 import argparse
@@ -22,9 +16,7 @@ from scipy import ndimage
 from scipy.cluster.vq import kmeans2
 from scipy.optimize import linear_sum_assignment
 
-# ---------------------------------------------------------------------------
-# Public profile data. Edit this block, then rerun the script.
-# ---------------------------------------------------------------------------
+
 @dataclass(frozen=True)
 class InfoToken:
     text: str
@@ -158,20 +150,18 @@ INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
 INFO_LINE_COLUMNS = 79
 LOGO_MARKS = ("React", "Java", "Database")
 
-# ---------------------------------------------------------------------------
-# Fixed design/animation contract.
-# ---------------------------------------------------------------------------
+
 WIDTH, HEIGHT = 1180, 610
 GRID_W, GRID_H = 300, 340
 TARGET_DOTS = 17_000
+DARK_GAMMA = 2.4
 INTRO_GROUPS = 60
 DRIFT_BANDS = 94
 TRAVELLERS = 900
 INTRO_SECONDS = 3.2
 LOOP_SECONDS = 14.2
 
-# 3.0 portrait, then 1.3 transition + 2.0 hold for each of three marks,
-# with a final 1.3 transition back to the portrait.
+
 TIMES_SECONDS = np.array([0.0, 3.0, 4.3, 6.3, 7.6, 9.6, 10.9, 12.9, 14.2])
 KEY_TIMES = TIMES_SECONDS / LOOP_SECONDS
 KEY_TIMES_SVG = ";".join(f"{v:.6f}" for v in KEY_TIMES)
@@ -285,33 +275,29 @@ def subject_bounds(image: Image.Image) -> tuple[int, int, int, int]:
     return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
 
 
-def crop_head_shoulders(image: Image.Image) -> Image.Image:
-    """Top-anchored, roomy 300:340 crop retaining head and shoulders."""
+def crop_subject(image: Image.Image) -> Image.Image:
     image = image.convert("RGBA")
-    x0, y0, x1, _ = subject_bounds(image)
+    x0, y0, x1, y1 = subject_bounds(image)
     subject_width = max(1, x1 - x0)
-    crop_width = min(image.width, int(round(subject_width * 1.06)))
+    subject_height = max(1, y1 - y0)
+    crop_width = int(round(max(subject_width * 1.08, subject_height * 1.08 * GRID_W / GRID_H)))
     crop_height = int(round(crop_width * GRID_H / GRID_W))
 
     center_x = (x0 + x1) / 2.0
+    center_y = (y0 + y1) / 2.0
     left = int(round(center_x - crop_width / 2.0))
-    left = max(0, min(left, image.width - crop_width))
+    top = int(round(center_y - crop_height / 2.0))
 
-    # Small headroom only; the rest of the frame is reserved for shoulders.
-    top = max(0, y0 - int(round(subject_width * 0.025)))
-    if top + crop_height > image.height:
-        top = max(0, image.height - crop_height)
-    bottom = min(image.height, top + crop_height)
-    return image.crop((left, top, left + crop_width, bottom))
+    canvas = Image.new("RGBA", (crop_width, crop_height), image.getpixel((0, 0)))
+    canvas.paste(image, (-left, -top))
+    return canvas
 
 
 def segment_subject(crop: Image.Image) -> np.ndarray:
-    """Colour-distance segmentation + closing + fill holes + largest component."""
     rgba = np.asarray(crop.convert("RGBA"), dtype=np.uint8)
     rgb = rgba[..., :3].astype(np.float32)
     alpha = rgba[..., 3].astype(np.float32) / 255.0
 
-    # Transparent pixels define a robust background sample when available.
     transparent = alpha < 0.08
     if transparent.any():
         background = np.median(rgb[transparent], axis=0)
@@ -329,9 +315,7 @@ def segment_subject(crop: Image.Image) -> np.ndarray:
 
     distance = np.sqrt(np.sum((rgb - background) ** 2, axis=2))
     distance /= max(float(distance.max()), 1.0)
-    # Alpha keeps dark clothing from being mistaken for a transparent dark background;
-    # colour distance remains the segmentation signal for ordinary opaque photos.
-    score = np.maximum(alpha, distance * 0.72)
+    score = np.maximum(alpha, distance * 0.72) if transparent.any() else distance
     normalized = score * 255.0
     threshold = max(18.0, otsu_threshold(normalized))
     mask = normalized > threshold
@@ -345,15 +329,13 @@ def segment_subject(crop: Image.Image) -> np.ndarray:
 
 
 def preprocess_portrait(image: Image.Image) -> tuple[Image.Image, np.ndarray]:
-    crop = crop_head_shoulders(image)
+    crop = crop_subject(image)
     mask = segment_subject(crop)
 
     resized = crop.resize((GRID_W, GRID_H), Image.Resampling.LANCZOS)
     mask_image = Image.fromarray((mask * 255).astype(np.uint8), mode="L")
     mask = np.asarray(mask_image.resize((GRID_W, GRID_H), Image.Resampling.NEAREST)) > 127
 
-    # The light-mode source retains its background. Transparent input naturally
-    # becomes a clean white background rather than an invented replacement scene.
     white = Image.new("RGBA", resized.size, (255, 255, 255, 255))
     grayscale = Image.alpha_composite(white, resized.convert("RGBA")).convert("L")
     grayscale = ImageOps.autocontrast(grayscale, cutoff=1)
@@ -363,7 +345,6 @@ def preprocess_portrait(image: Image.Image) -> tuple[Image.Image, np.ndarray]:
 
 
 def floyd_steinberg_serpentine(tone: np.ndarray, mask: np.ndarray | None) -> np.ndarray:
-    """1-bit serpentine Floyd-Steinberg with hard mask-edge diffusion clearing."""
     work = np.clip(tone.astype(np.float64), 0.0, 255.0).copy()
     height, width = work.shape
     active = np.ones((height, width), dtype=bool) if mask is None else mask.astype(bool)
@@ -374,7 +355,7 @@ def floyd_steinberg_serpentine(tone: np.ndarray, mask: np.ndarray | None) -> np.
         x_range = range(width) if left_to_right else range(width - 1, -1, -1)
         for x in x_range:
             if not active[y, x]:
-                work[y, x] = 0.0  # hard-clear accumulated bleed outside the mask
+                work[y, x] = 0.0
                 continue
             old = work[y, x]
             new = 255.0 if old >= 127.5 else 0.0
@@ -402,7 +383,6 @@ def floyd_steinberg_serpentine(tone: np.ndarray, mask: np.ndarray | None) -> np.
 
 
 def scale_for_dot_budget(tone: np.ndarray, active: np.ndarray, target: int) -> np.ndarray:
-    """Scale exposure globally; relative portrait contrast is left unchanged."""
     target = int(np.clip(target, 1, int(active.sum())))
     base = tone.astype(np.float64)
     low, high = 0.0, 12.0
@@ -420,7 +400,7 @@ def portrait_points(grayscale: Image.Image, mask: np.ndarray, mode: str) -> np.n
     values = np.asarray(grayscale, dtype=np.float64)
     if mode == "dark":
         active = mask
-        tone = scale_for_dot_budget(values, active, TARGET_DOTS)
+        tone = scale_for_dot_budget(255.0 * (values / 255.0) ** DARK_GAMMA, active, TARGET_DOTS)
         bitmap = floyd_steinberg_serpentine(tone, mask=active)
     elif mode == "light":
         active = np.ones_like(mask, dtype=bool)
@@ -433,7 +413,6 @@ def portrait_points(grayscale: Image.Image, mask: np.ndarray, mode: str) -> np.n
 
 
 def intro_groups(points: np.ndarray, groups: int = INTRO_GROUPS) -> tuple[np.ndarray, float]:
-    """Globally interleave every group across a 6x6 spatial diagnostic grid."""
     rng = stable_rng("intro", len(points), groups)
     cells_x = cells_y = 6
     cell_x = np.minimum((points[:, 0] * cells_x / GRID_W).astype(int), cells_x - 1)
@@ -458,7 +437,6 @@ def intro_groups(points: np.ndarray, groups: int = INTRO_GROUPS) -> tuple[np.nda
 
 
 def points_to_path(points: np.ndarray, dot: float = 1.0) -> str:
-    """Encode square dots as horizontal SVG path runs with crisp edges."""
     if len(points) == 0:
         return ""
     xy = np.unique(np.rint(points).astype(np.int32), axis=0)
@@ -501,7 +479,6 @@ def raster_logo(mark: str) -> np.ndarray:
         draw = ImageDraw.Draw(canvas)
         draw.ellipse((139, 151, 161, 173), fill=255)
     elif mark == "Java":
-        # Steam, cup, handle, and saucer form a compact Java coffee mark.
         draw.arc((105, 72, 165, 151), 275, 82, fill=255, width=8)
         draw.arc((135, 82, 190, 157), 96, 260, fill=255, width=8)
         draw.arc((113, 96, 174, 166), 280, 78, fill=255, width=7)
@@ -536,7 +513,6 @@ def sample_logo(mask: np.ndarray, count: int, key: str) -> np.ndarray:
 
 
 def optimal_transport(source: np.ndarray, target: np.ndarray) -> np.ndarray:
-    """Exact Hungarian assignment minimizing total squared dot travel."""
     cost = ((source[:, None, :] - target[None, :, :]) ** 2).sum(axis=2)
     rows, columns = linear_sum_assignment(cost)
     reordered = np.empty_like(target)
@@ -554,7 +530,6 @@ def logo_trajectories(marks: Sequence[str]) -> list[np.ndarray]:
 
 
 def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
-    """Cluster noisy linear drift; sigma=4 noise breaks quantized square boundaries."""
     rng = stable_rng("drift", len(points), DRIFT_BANDS)
     ideal = 0.42 * (target_centroid[None, :] - points)
     noisy = ideal + rng.normal(0.0, 4.0, size=ideal.shape)
@@ -568,7 +543,6 @@ def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.nda
         if len(members):
             translations[band] = members.mean(axis=0)
 
-    # Detect long, axis-aligned repeated boundaries between the same band pair.
     grid = np.full((GRID_H, GRID_W), -1, dtype=np.int32)
     xy = np.rint(points).astype(np.int32)
     valid = (
@@ -805,7 +779,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
             "description": "Animated dark-mode terminal profile for Patruxs.",
             "palette": (
                 "--bg:#080A0D; --panel:#0D1117; --stroke:#2B313B; --text:#E6EDF3;\n"
-                "      --muted:#7D8998; --label:#39D0D8; --portrait:#A8F07A;\n"
+                "      --muted:#7D8998; --label:#39D0D8; --portrait:#6AD7E5;\n"
                 "      --positive:#41D17D; --negative:#FF667A; --live:#FF4D5A;"
             ),
             "portrait": dark_layers,
@@ -814,7 +788,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
             "description": "Animated light-mode terminal profile for Patruxs.",
             "palette": (
                 "--bg:#E8EBEF; --panel:#F7F8FA; --stroke:#C4CAD3; --text:#15191F;\n"
-                "      --muted:#66707D; --label:#087F8C; --portrait:#1F6E5C;\n"
+                "      --muted:#66707D; --label:#087F8C; --portrait:#007D9C;\n"
                 "      --positive:#18794E; --negative:#C21F39; --live:#D7263D;"
             ),
             "portrait": light_layers,

@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""Refresh live profile data and GitHub summary cards.
-
-The script intentionally uses only Python's standard library. It downloads the
-three cards displayed by README.md for both color themes, reads the shared
-GitHub statistics from the stats card, reads the exact commit total from the
-contributions API, computes repository line totals through GitHub's contributor
-statistics API, and updates both generated profile SVGs.
-"""
 from __future__ import annotations
 
 import argparse
@@ -131,7 +122,6 @@ def _add_months(value: dt.date, months: int) -> dt.date:
 
 
 def account_age(start: dt.date, today: dt.date) -> str:
-    """Return an exact calendar duration suitable for the Uptime row."""
     if today < start:
         raise ValueError("Account creation date cannot be in the future")
 
@@ -160,7 +150,6 @@ def account_age(start: dt.date, today: dt.date) -> str:
 
 
 def parse_card_stats(svg: str) -> dict[str, int]:
-    """Read the statistics by label so upstream layout changes fail safely."""
     root = ET.fromstring(svg)
     texts = [
         ("".join(element.itertext()).strip(), element.attrib.get("y"))
@@ -178,9 +167,6 @@ def parse_card_stats(svg: str) -> dict[str, int]:
         if not key:
             continue
 
-        # Values sit on the same baseline as their label. Only fall back to
-        # document order when the card carries no coordinates at all, so a
-        # value we cannot read never silently borrows another row's number.
         if y_position is not None:
             candidates = [
                 candidate
@@ -370,12 +356,7 @@ def fetch_commit_total(
     start: dt.date,
     today: dt.date,
 ) -> int:
-    """Sum commit contributions year by year.
-
-    The summary card abbreviates totals past a thousand ("1.2k"), so the exact
-    figure is read from the same contributions API the card itself is built on.
-    A contributions window may not span more than a year, hence the loop.
-    """
+   
     total = 0
     for year in range(start.year, today.year + 1):
         window_start = max(start, dt.date(year, 1, 1))
@@ -418,8 +399,7 @@ def fetch_profile_stats(
     account_start = created_at.date()
     if start_date is None:
         start_date = account_start
-    # Count from the account's real creation date; a BIRTHDAY override only
-    # shapes the Uptime row and would otherwise query decades of empty years.
+   
     commits = fetch_commit_total(client, username, account_start, today)
 
     return ProfileStats(

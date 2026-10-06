@@ -105,7 +105,7 @@ the repository README on a user profile.
 | Problem | Fix |
 |---------|-----|
 | `ModuleNotFoundError` | Install `requirements.txt` in the active environment |
-| Portrait clipping looks wrong | Use a transparent PNG with visible head and shoulders |
+| Portrait clipping looks wrong | Use a PNG with a plain or transparent background around the whole subject |
 | Banner looks unchanged | Rebuild it, then hard-refresh after GitHub updates its image cache |
 | Animation does not run locally | Preview through a browser instead of an editor's static SVG viewer |
 | Summary cards do not refresh | Check workflow permissions and the `Fetch live profile data and summary cards` logs |
