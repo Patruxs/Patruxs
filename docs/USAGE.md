@@ -65,6 +65,10 @@ Edit the public profile data near the top of
 Pass a different local image to change the portrait. A transparent-background
 PNG produces the cleanest subject mask.
 
+`LOGO_MARKS` reads one PNG per mark from `assets/logos/`, named after the mark
+in lowercase. Like the portrait, those sources stay local and are not committed,
+so restore them before regenerating the banner.
+
 After either change, regenerate and review `profile.html`.
 
 ## GitHub Actions

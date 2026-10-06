@@ -4,12 +4,19 @@ import unittest
 
 import numpy as np
 
-from scripts.generate_profile import LOGO_MARKS, raster_logo
+from scripts.generate_profile import LOGO_DIR, LOGO_MARKS, raster_logo
+
+
+def logo_sources_available() -> bool:
+    return all((LOGO_DIR / f"{mark.lower()}.png").exists() for mark in LOGO_MARKS)
 
 
 class LogoRasterTests(unittest.TestCase):
     def test_uses_named_arch_kali_nix_and_tux_icons(self) -> None:
         self.assertEqual(LOGO_MARKS, ("Arch", "Kali", "Nix", "Tux"))
+
+        if not logo_sources_available():
+            self.skipTest("local logo sources are not present")
 
         masks = [raster_logo(mark) for mark in LOGO_MARKS]
 
