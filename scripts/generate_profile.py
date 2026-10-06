@@ -865,9 +865,9 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
   </circle>
   <text x="{live_x + 11:.1f}" y="100" class="live" textLength="34" lengthAdjust="spacingAndGlyphs">LIVE</text>
 
-  <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="crispEdges">
+  <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="geometricPrecision">
     {data["portrait"]}
-    <g id="travellers" opacity="0" shape-rendering="auto">{travellers}</g>
+    <g id="travellers" opacity="0">{travellers}</g>
   </g>
 
   {rows}
