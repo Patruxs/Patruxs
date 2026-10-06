@@ -8,8 +8,8 @@ from scripts.generate_profile import LOGO_MARKS, raster_logo
 
 
 class LogoRasterTests(unittest.TestCase):
-    def test_uses_named_react_java_and_database_icons(self) -> None:
-        self.assertEqual(LOGO_MARKS, ("React", "Java", "Database"))
+    def test_uses_named_arch_kali_nix_and_tux_icons(self) -> None:
+        self.assertEqual(LOGO_MARKS, ("Arch", "Kali", "Nix", "Tux"))
 
         masks = [raster_logo(mark) for mark in LOGO_MARKS]
 

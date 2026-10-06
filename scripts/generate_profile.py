@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageFont, ImageOps
 from scipy import ndimage
 from scipy.cluster.vq import kmeans2
 from scipy.optimize import linear_sum_assignment
@@ -148,7 +148,9 @@ INFO_LINES: tuple[tuple[InfoToken, ...], ...] = (
     ),
 )
 INFO_LINE_COLUMNS = 79
-LOGO_MARKS = ("React", "Java", "Database")
+LOGO_MARKS = ("Arch", "Kali", "Nix", "Tux")
+LOGO_DIR = Path(__file__).resolve().parent.parent / "assets" / "logos"
+LOGO_BOX = (40, 55, 260, 285)
 
 
 WIDTH, HEIGHT = 1180, 610
@@ -157,14 +159,32 @@ TARGET_DOTS = 17_000
 DARK_GAMMA = 2.4
 INTRO_GROUPS = 60
 DRIFT_BANDS = 94
-TRAVELLERS = 900
+TRAVELLERS = 3500
+TRAVELLER_DOT = 2.6
+PORTRAIT_DOT = 1.7
 INTRO_SECONDS = 3.2
-LOOP_SECONDS = 14.2
+PORTRAIT_HOLD_SECONDS = 3.0
+LOGO_HOLD_SECONDS = 2.0
+TRANSITION_SECONDS = 1.3
 
 
-TIMES_SECONDS = np.array([0.0, 3.0, 4.3, 6.3, 7.6, 9.6, 10.9, 12.9, 14.2])
+def loop_times_seconds(logo_count: int) -> np.ndarray:
+    times = [0.0, PORTRAIT_HOLD_SECONDS]
+    for _ in range(logo_count):
+        times.append(times[-1] + TRANSITION_SECONDS)
+        times.append(times[-1] + LOGO_HOLD_SECONDS)
+    times.append(times[-1] + TRANSITION_SECONDS)
+    return np.array(times)
+
+
+def loop_values(start: str, middle: str, end: str, logo_count: int) -> str:
+    return ";".join([start, start] + [middle] * (2 * logo_count) + [end])
+
+
+TIMES_SECONDS = loop_times_seconds(len(LOGO_MARKS))
+LOOP_SECONDS = round(float(TIMES_SECONDS[-1]), 3)
 KEY_TIMES = TIMES_SECONDS / LOOP_SECONDS
-KEY_TIMES_SVG = ";".join(f"{v:.6f}" for v in KEY_TIMES)
+KEY_TIMES_SVG = ";".join(f"{v:.4f}" for v in KEY_TIMES)
 
 FONT_MONO_CANDIDATES = (
     "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
@@ -436,7 +456,7 @@ def intro_groups(points: np.ndarray, groups: int = INTRO_GROUPS) -> tuple[np.nda
     return labels, float(np.mean(distances))
 
 
-def points_to_path(points: np.ndarray, dot: float = 1.0) -> str:
+def points_to_path(points: np.ndarray, dot: float = PORTRAIT_DOT) -> str:
     if len(points) == 0:
         return ""
     xy = np.unique(np.rint(points).astype(np.int32), axis=0)
@@ -450,66 +470,85 @@ def points_to_path(points: np.ndarray, dot: float = 1.0) -> str:
         while index < len(xy) and int(xy[index, 1]) == y and int(xy[index, 0]) == end_x + 1:
             end_x = int(xy[index, 0])
             index += 1
-        width = (end_x - start_x + 1) * dot
+        width = end_x - start_x + dot
         commands.append(f"M{start_x} {y}h{width:g}v{dot:g}h-{width:g}z")
     return "".join(commands)
 
 
-def raster_logo(mark: str) -> np.ndarray:
-    canvas = Image.new("L", (GRID_W, GRID_H), 0)
-    draw = ImageDraw.Draw(canvas)
-
-    if mark == "React":
-        ring_box = (72, 124, 228, 200)
-        for angle in (0, 60, 120):
-            ring = Image.new("L", (GRID_W, GRID_H), 0)
-            ImageDraw.Draw(ring).ellipse(ring_box, outline=255, width=8)
-            canvas = Image.fromarray(
-                np.maximum(
-                    np.asarray(canvas),
-                    np.asarray(
-                        ring.rotate(
-                            angle,
-                            resample=Image.Resampling.BICUBIC,
-                            center=(150, 162),
-                        )
-                    ),
-                )
-            )
-        draw = ImageDraw.Draw(canvas)
-        draw.ellipse((139, 151, 161, 173), fill=255)
-    elif mark == "Java":
-        draw.arc((105, 72, 165, 151), 275, 82, fill=255, width=8)
-        draw.arc((135, 82, 190, 157), 96, 260, fill=255, width=8)
-        draw.arc((113, 96, 174, 166), 280, 78, fill=255, width=7)
-        draw.line((94, 159, 198, 159), fill=255, width=9)
-        draw.arc((95, 137, 205, 225), 0, 180, fill=255, width=10)
-        draw.arc((181, 164, 225, 207), 255, 105, fill=255, width=9)
-        draw.arc((78, 203, 222, 238), 2, 178, fill=255, width=9)
-        draw.arc((92, 217, 208, 246), 2, 178, fill=255, width=7)
-    elif mark == "Database":
-        draw.ellipse((79, 91, 221, 145), outline=255, width=10)
-        draw.line((79, 118, 79, 224), fill=255, width=10)
-        draw.line((221, 118, 221, 224), fill=255, width=10)
-        draw.arc((79, 125, 221, 179), 0, 180, fill=255, width=10)
-        draw.arc((79, 169, 221, 223), 0, 180, fill=255, width=10)
-        draw.arc((79, 197, 221, 251), 0, 180, fill=255, width=10)
-    else:
+def logo_foreground(mark: str) -> np.ndarray:
+    source = LOGO_DIR / f"{mark.lower()}.png"
+    if not source.exists():
         raise ValueError(f"Unknown logo {mark!r}")
+    rgb = np.asarray(Image.open(source).convert("RGB"), dtype=np.float32)
+    luminance = rgb.mean(axis=2)
 
-    return np.asarray(canvas) > 127
+    if mark == "Arch":
+        return (rgb[..., 2] > 150) & (rgb[..., 0] < 120)
+    if mark == "Kali":
+        return luminance > 200
+    if mark == "Nix":
+        return luminance < 235
+    if mark == "Tux":
+        body = ndimage.binary_fill_holes(luminance < 110)
+        subject = ndimage.binary_fill_holes(luminance < 235)
+        yellow = (rgb[..., 0] > 150) & (rgb[..., 2] < 120)
+        dark = luminance < 60
+        eyes = dark & ~largest_component(dark)
+        outline = np.zeros_like(body)
+        for region in (body, subject, yellow):
+            outline |= region & ~ndimage.binary_erosion(region, iterations=4)
+        return outline | eyes
+    raise ValueError(f"Unknown logo {mark!r}")
+
+
+def raster_logo(mark: str) -> np.ndarray:
+    foreground = logo_foreground(mark)
+    ys, xs = np.where(foreground)
+    if len(xs) == 0:
+        raise ValueError(f"Logo {mark!r} produced no points")
+    crop = foreground[ys.min() : ys.max() + 1, xs.min() : xs.max() + 1]
+
+    left, top, right, bottom = LOGO_BOX
+    box_width, box_height = right - left, bottom - top
+    scale = min(box_width / crop.shape[1], box_height / crop.shape[0])
+    width = max(1, int(round(crop.shape[1] * scale)))
+    height = max(1, int(round(crop.shape[0] * scale)))
+    resized = Image.fromarray((crop * 255).astype(np.uint8)).resize(
+        (width, height), Image.Resampling.LANCZOS
+    )
+
+    canvas = np.zeros((GRID_H, GRID_W), dtype=np.uint8)
+    x0 = left + (box_width - width) // 2
+    y0 = top + (box_height - height) // 2
+    canvas[y0 : y0 + height, x0 : x0 + width] = np.asarray(resized)
+    return canvas > 127
 
 
 def sample_logo(mask: np.ndarray, count: int, key: str) -> np.ndarray:
-    ys, xs = np.where(mask)
-    points = np.column_stack([xs, ys]).astype(np.float64)
-    if len(points) == 0:
+    active = mask.astype(bool)
+    available = int(active.sum())
+    if available == 0:
         raise ValueError(f"Logo {key!r} produced no points")
-    if len(points) < count:
-        points = np.tile(points, (int(math.ceil(count / len(points))), 1))
     rng = stable_rng("logo", key, count)
-    chosen = rng.choice(len(points), count, replace=False)
-    return points[chosen] + rng.normal(0.0, 0.18, size=(count, 2))
+
+    if available <= count:
+        ys, xs = np.where(active)
+        points = np.column_stack([xs, ys]).astype(np.float64)
+        points = np.tile(points, (int(math.ceil(count / available)), 1))[:count]
+        return points + rng.normal(0.0, 0.18, size=(count, 2))
+
+    tone = scale_for_dot_budget(np.full(mask.shape, 255.0), active, count)
+    bitmap = floyd_steinberg_serpentine(tone, mask=active)
+    ys, xs = np.where(bitmap)
+    points = np.column_stack([xs, ys]).astype(np.float64)
+    if len(points) > count:
+        points = points[rng.choice(len(points), count, replace=False)]
+    elif len(points) < count:
+        ys, xs = np.where(active & ~bitmap)
+        extra = np.column_stack([xs, ys]).astype(np.float64)
+        picked = rng.choice(len(extra), count - len(points), replace=len(extra) < count - len(points))
+        points = np.vstack([points, extra[picked]])
+    return points + rng.normal(0.0, 0.12, size=(count, 2))
 
 
 def optimal_transport(source: np.ndarray, target: np.ndarray) -> np.ndarray:
@@ -522,11 +561,11 @@ def optimal_transport(source: np.ndarray, target: np.ndarray) -> np.ndarray:
 
 def logo_trajectories(marks: Sequence[str]) -> list[np.ndarray]:
     clouds = [sample_logo(raster_logo(mark), TRAVELLERS, mark) for mark in marks]
-    first = clouds[0]
-    second = optimal_transport(first, clouds[1])
-    third = optimal_transport(second, clouds[2])
-    return_to_first = optimal_transport(third, first)
-    return [first, second, third, return_to_first]
+    trajectories = [clouds[0]]
+    for cloud in clouds[1:]:
+        trajectories.append(optimal_transport(trajectories[-1], cloud))
+    trajectories.append(optimal_transport(trajectories[-1], clouds[0]))
+    return trajectories
 
 
 def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
@@ -678,18 +717,14 @@ def build_portrait_layers(points: np.ndarray, prefix: str, logo_centroid: np.nda
             f'</path>'
         )
 
-    portrait_opacity = "1;1;0;0;0;0;0;0;1"
+    portrait_opacity = loop_values("1", "0", "1", len(LOGO_MARKS))
     band_paths: list[str] = []
     loop_geometry_bytes = 0
     for band in range(DRIFT_BANDS):
         path_data = points_to_path(points[band_labels == band])
         loop_geometry_bytes += len(path_data.encode("utf-8"))
         dx, dy = translations[band]
-        transforms = (
-            f"0 0;0 0;{dx:.3f} {dy:.3f};{dx:.3f} {dy:.3f};"
-            f"{dx:.3f} {dy:.3f};{dx:.3f} {dy:.3f};{dx:.3f} {dy:.3f};"
-            f"{dx:.3f} {dy:.3f};0 0"
-        )
+        transforms = loop_values("0 0", f"{dx:.3f} {dy:.3f}", "0 0", len(LOGO_MARKS))
         band_paths.append(
             f'<path d="{path_data}">'
             f'<animate attributeName="opacity" values="{portrait_opacity}" '
@@ -701,8 +736,9 @@ def build_portrait_layers(points: np.ndarray, prefix: str, logo_centroid: np.nda
             f'</path>'
         )
 
+    offset = (PORTRAIT_DOT - 1.0) / 2.0
     svg = (
-        f'<g class="portrait-theme {prefix}">'
+        f'<g class="portrait-theme {prefix}" transform="translate({-offset:g} {-offset:g})">'
         f'<g id="{prefix}-intro">'
         f'<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.925;1" '
         f'begin="0s" dur="{INTRO_SECONDS}s" fill="freeze" calcMode="linear"/>'
@@ -724,32 +760,26 @@ def build_portrait_layers(points: np.ndarray, prefix: str, logo_centroid: np.nda
 
 
 def traveller_svg(trajectories: Sequence[np.ndarray]) -> str:
-    first, second, third, return_first = trajectories
-    opacity = "0;0;1;1;1;1;1;1;0"
-    dot_path = "M-.82 -.82h1.64v1.64h-1.64z"
-    parts: list[str] = []
+    first, *others, return_first = trajectories
+    opacity = loop_values("0", "1", "0", len(others) + 1)
+    half = TRAVELLER_DOT / 2.0
+    dot_path = f"M-{half:g} -{half:g}h{TRAVELLER_DOT:g}v{TRAVELLER_DOT:g}h-{TRAVELLER_DOT:g}z"
+    parts: list[str] = [
+        f'<animate attributeName="opacity" values="{opacity}" '
+        f'keyTimes="{KEY_TIMES_SVG}" begin="{INTRO_SECONDS}s" dur="{LOOP_SECONDS}s" '
+        f'repeatCount="indefinite" calcMode="linear"/>'
+    ]
     for index in range(TRAVELLERS):
-        positions = [
-            first[index],
-            first[index],
-            first[index],
-            first[index],
-            second[index],
-            second[index],
-            third[index],
-            third[index],
-            return_first[index],
-        ]
-        transform_values = ";".join(f"{point[0]:.3f} {point[1]:.3f}" for point in positions)
+        positions = [first[index]] * 4
+        for cloud in others:
+            positions.extend([cloud[index]] * 2)
+        positions.append(return_first[index])
+        transform_values = ";".join(f"{point[0]:.1f} {point[1]:.1f}" for point in positions)
         parts.append(
-            f'<path d="{dot_path}" opacity="0" shape-rendering="crispEdges">'
+            f'<path d="{dot_path}">'
             f'<animateTransform attributeName="transform" type="translate" '
             f'values="{transform_values}" keyTimes="{KEY_TIMES_SVG}" '
-            f'begin="{INTRO_SECONDS}s" dur="{LOOP_SECONDS}s" repeatCount="indefinite" '
-            f'calcMode="linear"/>'
-            f'<animate attributeName="opacity" values="{opacity}" '
-            f'keyTimes="{KEY_TIMES_SVG}" begin="{INTRO_SECONDS}s" dur="{LOOP_SECONDS}s" '
-            f'repeatCount="indefinite" calcMode="linear"/>'
+            f'begin="{INTRO_SECONDS}s" dur="{LOOP_SECONDS}s" repeatCount="indefinite"/>'
             f'</path>'
         )
     return "".join(parts)
@@ -837,7 +867,7 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
 
   <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="crispEdges">
     {data["portrait"]}
-    <g id="travellers">{travellers}</g>
+    <g id="travellers" opacity="0">{travellers}</g>
   </g>
 
   {rows}
@@ -853,9 +883,9 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
             "seconds": LOOP_SECONDS,
             "key_times_seconds": TIMES_SECONDS.tolist(),
             "key_times_normalized": [round(float(value), 6) for value in KEY_TIMES],
-            "portrait_hold_seconds": 3.0,
-            "logo_hold_seconds": 2.0,
-            "transition_seconds": 1.3,
+            "portrait_hold_seconds": PORTRAIT_HOLD_SECONDS,
+            "logo_hold_seconds": LOGO_HOLD_SECONDS,
+            "transition_seconds": TRANSITION_SECONDS,
         },
         "drift_bands": DRIFT_BANDS,
         "travellers": TRAVELLERS,
