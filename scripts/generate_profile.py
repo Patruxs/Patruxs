@@ -153,7 +153,7 @@ LOGO_DIR = Path(__file__).resolve().parent.parent / "assets" / "logos"
 LOGO_BOX = (40, 55, 260, 285)
 
 
-WIDTH, HEIGHT = 1180, 610
+WIDTH, HEIGHT = 1180, 546
 GRID_W, GRID_H = 300, 340
 TARGET_DOTS = 17_000
 DARK_GAMMA = 2.4
@@ -637,7 +637,7 @@ def drift_bands(points: np.ndarray, target_centroid: np.ndarray) -> tuple[np.nda
 
 def info_rows_svg() -> str:
     left = 506.0
-    y = 128.0
+    y = 62.0
     row_gap = 25.0
     clip_definitions: list[str] = []
     parts: list[str] = []
@@ -798,11 +798,10 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
     travellers = traveller_svg(trajectories)
     rows = info_rows_svg()
 
-    portrait_x, portrait_y = 48.0, 123.0
+    portrait_x, portrait_y = 48.0, 58.0
     portrait_height = 430.0
     portrait_scale = portrait_height / GRID_H
 
-    live_x = 1080.0
 
     theme_data = {
         "dark": {
@@ -836,34 +835,19 @@ def build_svgs(image_path: Path) -> tuple[dict[str, str], dict[str, object]]:
       {data["palette"]}
     }}
     text {{ font-family:"DejaVu Sans Mono","Liberation Mono",monospace; }}
-    .window-title {{ font-size:13px; fill:var(--muted); letter-spacing:.3px; }}
-    .section {{ font-size:13px; fill:var(--muted); font-weight:700; letter-spacing:1.7px; }}
     .terminal-line {{ font-size:16.5px; letter-spacing:-2.05px; dominant-baseline:alphabetic; }}
     .key, .accent {{ fill:var(--label); font-weight:700; }}
     .cc {{ fill:var(--muted); }}
     .value {{ fill:var(--text); }}
     .addColor {{ fill:var(--positive); font-weight:700; }}
     .delColor {{ fill:var(--negative); font-weight:700; }}
-    .live {{ font-size:12px; fill:var(--live); font-weight:700; letter-spacing:1.4px; }}
   </style>
 
   <rect width="{WIDTH}" height="{HEIGHT}" rx="18" fill="var(--bg)"/>
   <rect x="1" y="1" width="{WIDTH - 2}" height="{HEIGHT - 2}" rx="17" fill="none" stroke="var(--stroke)"/>
-  <path d="M1 48H1179" stroke="var(--stroke)"/>
-  <circle cx="24" cy="24" r="5" fill="#FF5F57"/>
-  <circle cx="42" cy="24" r="5" fill="#FEBC2E"/>
-  <circle cx="60" cy="24" r="5" fill="#28C840"/>
-  <text x="590" y="29" text-anchor="middle" class="window-title" textLength="128" lengthAdjust="spacingAndGlyphs">profile.sh --live</text>
 
-  <rect x="26" y="72" width="420" height="512" rx="12" fill="var(--panel)" stroke="var(--stroke)"/>
-  <rect x="470" y="72" width="684" height="512" rx="12" fill="var(--panel)" stroke="var(--stroke)"/>
-  <text x="48" y="101" class="section" textLength="91" lengthAdjust="spacingAndGlyphs">VISUAL.MAP</text>
-  <text x="496" y="101" class="section" textLength="102" lengthAdjust="spacingAndGlyphs">SYSTEM.INFO</text>
-
-  <circle cx="{live_x:.1f}" cy="96" r="4" fill="var(--live)">
-    <animate attributeName="opacity" values=".35;1;.35" keyTimes="0;.5;1" dur="1.25s" repeatCount="indefinite"/>
-  </circle>
-  <text x="{live_x + 11:.1f}" y="100" class="live" textLength="34" lengthAdjust="spacingAndGlyphs">LIVE</text>
+  <rect x="26" y="26" width="420" height="494" rx="12" fill="var(--panel)" stroke="var(--stroke)"/>
+  <rect x="470" y="26" width="684" height="494" rx="12" fill="var(--panel)" stroke="var(--stroke)"/>
 
   <g transform="translate({portrait_x} {portrait_y}) scale({portrait_scale:.6f})" fill="var(--portrait)" shape-rendering="geometricPrecision">
     {data["portrait"]}
