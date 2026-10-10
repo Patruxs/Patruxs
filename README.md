@@ -1,23 +1,3 @@
-<a href="https://patruxs.github.io/portfolio">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/portfolio-avatar-dark.svg"/>
-    <img align="left" width="240" src="./assets/portfolio-avatar-light.svg" alt="Patrick"/>
-  </picture>
-</a>
-
-<h3><a href="https://patruxs.github.io/portfolio">My Portfolio ↗</a></h3>
-
-Vibe coding is dead — the real ones aura code.
-
-<a href="https://patruxs.github.io/portfolio"><kbd>&nbsp;&nbsp; 🌐 &nbsp;Open Portfolio &nbsp;&nbsp;</kbd></a>
-
-<br clear="all"/>
-
-<p align="center">
-  <img src="./assets/animated-divider.gif" width="100%" alt="divider"/>
-</p>
-
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./assets/dark.svg"/>
